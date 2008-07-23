@@ -3,14 +3,17 @@ package dak.ant.taskdefs;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Iterator;
+import java.util.Vector;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.types.FileSet;
-import org.apache.tools.ant.types.resources.FileResource;
 
 import org.jets3t.service.S3ServiceException;
+import org.jets3t.service.acl.AccessControlList;
+import org.jets3t.service.acl.GroupGrantee;
+import org.jets3t.service.acl.Permission;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
 import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.S3Object;
@@ -24,6 +27,9 @@ import org.jets3t.service.security.AWSCredentials;
 public class S3Upload extends AWSTask {
 	protected String bucket;
 	protected String prefix = "";
+	protected boolean publicRead = false;
+	protected Vector filesets = new Vector();
+	private AccessControlList bucketAcl;
 
 	public void setBucket(String bucket) {
 		this.bucket = bucket;
@@ -33,6 +39,14 @@ public class S3Upload extends AWSTask {
 		this.prefix = prefix;
 	}
 
+	public void setPublicRead(boolean on) {
+		this.publicRead = on;
+	}
+
+	public void addFileset(FileSet set) {
+		filesets.addElement(set);
+	}
+
 	public void execute() throws BuildException {
 		checkParameters();
 
@@ -40,6 +54,10 @@ public class S3Upload extends AWSTask {
 		try {
 			RestS3Service s3 = new RestS3Service(credentials);
 			S3Bucket bucket = new S3Bucket(this.bucket);
+			if (publicRead) {
+				bucketAcl = s3.getBucketAcl(bucket);
+				bucketAcl.grantPermission(GroupGrantee.ALL_USERS, Permission.PERMISSION_READ);
+			}
         	for (int i = 0; i < filesets.size(); i++) {
             	FileSet fs = (FileSet) filesets.elementAt(i);
 				try {
@@ -98,20 +116,27 @@ public class S3Upload extends AWSTask {
 	}
 
 	private void copyFile(RestS3Service s3, S3Bucket b, File d, String file) throws Exception {
-        S3Object obj = new S3Object(b, prefix+file);
+		String key = (prefix+file).replace('\\', '/');
+		if (verbose) {
+			log("about to copy : "+key);
+		}
+        S3Object obj = new S3Object(b, key);
+		if (publicRead) {
+			obj.setAcl(bucketAcl);
+		}
 //		obj.setContentType(Mimetypes.getInstance().getMimetype("blah."+fileExt));
 		File f = new File(d, file);
         obj.setContentLength(f.length());
         try {
-			FileInputStream fIn = new FileInputStream(f);
-            obj.setDataInputStream(fIn);
+			//FileInputStream fIn = new FileInputStream(f);
+            obj.setDataInputFile(f);
             obj = s3.putObject(bucket, obj);
-			fIn.close();
+			//fIn.close();
         } catch (S3ServiceException e) {
             throw e;
         }
 		if (verbose) {
-			log("copied : "+f.getPath());
+			log("copied : "+key);
 		}
 	}
 
@@ -124,5 +149,9 @@ public class S3Upload extends AWSTask {
      */
     protected void checkParameters() throws BuildException {
 		super.checkParameters();
+		if (filesets == null) {
+			System.err.println("No fileset was provided, doing nothing");
+			return;
+		}
     }
 }
