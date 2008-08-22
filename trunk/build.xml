@@ -4,7 +4,7 @@
 	<property name="awstasks.src" value="java"/>
 	<property name="awstasks.lib" value="lib"/>
 	<property name="awstasks.jar" value="${awstasks.build}/jar"/>
-	<property name="awstasks.jar.file" value="${awstasks.jar}/awstasks.jar"/>
+	<property name="awstasks.jar.filename" value="${awstasks.jar}/awstasks"/>
     <property name="awstasks.javadoc" value="${awstasks.build}/apidocs" />
     <property name="awstasks.dist" value="dist" />
 
@@ -25,7 +25,8 @@
 	</target>
 
 	<target name="jar" depends="compile">
-        <jar destfile="${awstasks.jar.file}" basedir="${awstasks.classes}"/>
+		<input message="Enter the version # : " addproperty="rel.version"/>
+        <jar destfile="${awstasks.jar.filename}-${rel.version}.jar" basedir="${awstasks.classes}"/>
 	</target>
 
 	<target name="javadoc" depends="init">
@@ -65,6 +66,9 @@
 	<taskdef name="S3Upload" classname="dak.ant.taskdefs.S3Upload">
 		<classpath refid="classpath.compile"/>
 	</taskdef>
+	<taskdef name="S3Download" classname="dak.ant.taskdefs.S3Download">
+		<classpath refid="classpath.compile"/>
+	</taskdef>
 
 	<target name="upload">
 		<property file="${basedir}/aws.properties"/>
@@ -74,6 +78,17 @@
 				bucket="lifeguard">
 			<fileset dir="${awstasks.lib}" includes="**/*.jar"/>
 		</S3Upload>
+	</target>
+	<target name="download">
+		<property file="${basedir}/aws.properties"/>
+		<S3Download verbose="true"
+				accessId="${aws.accessId}"
+				secretKey="${aws.secretKey}"
+				bucket="lifeguard"
+				prefix=""
+				key=""
+				toDir=".">
+		</S3Download>
 	</target>
 -->
 
