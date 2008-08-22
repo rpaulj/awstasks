@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.util.Iterator;
 import java.util.Vector;
 
+import javax.activation.MimetypesFileTypeMap;
+
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.taskdefs.MatchingTask;
@@ -124,14 +126,12 @@ public class S3Upload extends AWSTask {
 		if (publicRead) {
 			obj.setAcl(bucketAcl);
 		}
-//		obj.setContentType(Mimetypes.getInstance().getMimetype("blah."+fileExt));
 		File f = new File(d, file);
         obj.setContentLength(f.length());
+		obj.setContentType(new MimetypesFileTypeMap().getContentType(f));
         try {
-			//FileInputStream fIn = new FileInputStream(f);
             obj.setDataInputFile(f);
             obj = s3.putObject(bucket, obj);
-			//fIn.close();
         } catch (S3ServiceException e) {
             throw e;
         }
