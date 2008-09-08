@@ -65,29 +65,13 @@ public class S3Upload extends AWSTask {
 				try {
 					DirectoryScanner ds = fs.getDirectoryScanner(getProject());
 					String[] files = ds.getIncludedFiles();
-					String[] dirs = ds.getIncludedDirectories();
 					File d = fs.getDir(getProject());
+
 					if (files.length > 0) {
 						log("copying " + files.length + " files from "
 							+ d.getAbsolutePath());
 						for (int j = 0; j < files.length; j++) {
 							copyFile(s3, bucket, d, files[j]);
-						}
-					}
-
-					if (dirs.length > 0) {
-						int dirCount = 0;
-						for (int j = dirs.length - 1; j >= 0; j--) {
-							log("copying dir " + d.getAbsolutePath() +", "+ dirs[j]);
-							processDirectory(s3, bucket, d, dirs[j]);
-			//                    dirCount++;
-						}
-
-						// TODO: need an accurate count?
-						if (dirCount > 0) {
-							log("Copied " + dirCount + " director"
-								+ (dirCount == 1 ? "y" : "ies")
-								+ " from " + d.getAbsolutePath());
 						}
 					}
 				} catch (BuildException be) {
@@ -102,18 +86,6 @@ public class S3Upload extends AWSTask {
 			}
 		} catch (Exception e) {
 			throw new BuildException(e);
-		}
-	}
-
-	private void processDirectory(RestS3Service s3, S3Bucket b, File d, String subdir) throws Exception {
-		File [] files = new File(d, subdir).listFiles();
-		for (int i=0; i<files.length; i++) {
-			if (files[i].isDirectory()) {
-				processDirectory(s3, b, d, files[i].getPath());
-			}
-			else {
-				copyFile(s3, b, d, files[i].getPath());
-			}
 		}
 	}
 

@@ -62,24 +62,24 @@
 
 	<!-- this is sample build stuff that shows how to use the hotswap target -->
 
-<!--
-	<taskdef name="S3Upload" classname="dak.ant.taskdefs.S3Upload">
-		<classpath refid="classpath.compile"/>
-	</taskdef>
-	<taskdef name="S3Download" classname="dak.ant.taskdefs.S3Download">
-		<classpath refid="classpath.compile"/>
-	</taskdef>
 
 	<target name="upload">
+		<taskdef name="S3Upload" classname="dak.ant.taskdefs.S3Upload">
+			<classpath refid="classpath.compile"/>
+		</taskdef>
 		<property file="${basedir}/aws.properties"/>
 		<S3Upload verbose="true"
 				accessId="${aws.accessId}"
 				secretKey="${aws.secretKey}"
 				bucket="lifeguard">
-			<fileset dir="${awstasks.lib}" includes="**/*.jar"/>
+			<fileset dir="${awstasks.build}" includes="**/*"/>
 		</S3Upload>
 	</target>
+<!--
 	<target name="download">
+		<taskdef name="S3Download" classname="dak.ant.taskdefs.S3Download">
+			<classpath refid="classpath.compile"/>
+		</taskdef>
 		<property file="${basedir}/aws.properties"/>
 		<S3Download verbose="true"
 				accessId="${aws.accessId}"
