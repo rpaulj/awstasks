@@ -21,7 +21,7 @@
 	</target>
 
 	<target name="compile" depends="init">
-		<javac destdir="${awstasks.classes}" srcdir="${awstasks.src}" classpathref="classpath.compile" debug="YES" deprecation="yes"/>
+		<javac destdir="${awstasks.classes}" srcdir="${awstasks.src}" classpathref="classpath.compile" debug="YES" deprecation="yes" target="1.5"/>
 	</target>
 
 	<target name="jar" depends="compile">
@@ -67,11 +67,15 @@
 		<taskdef name="S3Upload" classname="dak.ant.taskdefs.S3Upload">
 			<classpath refid="classpath.compile"/>
 		</taskdef>
+		<taskdef name="S3Delete" classname="dak.ant.taskdefs.S3Delete">
+			<classpath refid="classpath.compile"/>
+		</taskdef>
+		<S3Delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="test.bucket" prefix="classes/"/>
 		<property file="${basedir}/aws.properties"/>
 		<S3Upload verbose="true"
 				accessId="${aws.accessId}"
 				secretKey="${aws.secretKey}"
-				bucket="lifeguard">
+				bucket="test.bucket">
 			<fileset dir="${awstasks.build}" includes="**/*"/>
 		</S3Upload>
 	</target>

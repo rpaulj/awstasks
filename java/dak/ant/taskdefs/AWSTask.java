@@ -1,7 +1,5 @@
 package dak.ant.taskdefs;
 
-import java.util.Iterator;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 
@@ -16,6 +14,10 @@ public abstract class AWSTask extends MatchingTask {
 	protected boolean failOnError = false;
 	protected String accessId;
 	protected String secretKey;
+
+	public AWSTask() {
+		super();
+	}
 	
 	public void setAccessId(String accessId) {
 		this.accessId = accessId;

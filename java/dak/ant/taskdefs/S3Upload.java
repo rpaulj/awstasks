@@ -1,15 +1,17 @@
 package dak.ant.taskdefs;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.util.Iterator;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 import java.util.Vector;
 
 import javax.activation.MimetypesFileTypeMap;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
-import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.types.FileSet;
 
 import org.jets3t.service.S3ServiceException;
@@ -27,11 +29,15 @@ import org.jets3t.service.security.AWSCredentials;
  * @author D. Kavanagh
  */
 public class S3Upload extends AWSTask {
+	private static final long MONTH_SECONDS = 60 * 60 * 24 * 30L;
+	private static final long YEAR_MILLISECONDS = 365 * 24 * 60 * 60 * 1000L;
+
 	protected String bucket;
 	protected String prefix = "";
 	protected boolean publicRead = false;
-	protected Vector filesets = new Vector();
+	protected Vector<FileSet> filesets = new Vector<FileSet>();
 	private AccessControlList bucketAcl;
+	private boolean cacheNeverExpires = false;
 
 	public void setBucket(String bucket) {
 		this.bucket = bucket;
@@ -49,6 +55,10 @@ public class S3Upload extends AWSTask {
 		filesets.addElement(set);
 	}
 
+	public void setCacheNeverExpires(boolean cacheNeverExpires) {
+		this.cacheNeverExpires = cacheNeverExpires;
+	}
+
 	public void execute() throws BuildException {
 		checkParameters();
 
@@ -60,8 +70,7 @@ public class S3Upload extends AWSTask {
 				bucketAcl = s3.getBucketAcl(bucket);
 				bucketAcl.grantPermission(GroupGrantee.ALL_USERS, Permission.PERMISSION_READ);
 			}
-        	for (int i = 0; i < filesets.size(); i++) {
-            	FileSet fs = (FileSet) filesets.elementAt(i);
+        	for (FileSet fs : filesets) {
 				try {
 					DirectoryScanner ds = fs.getDirectoryScanner(getProject());
 					String[] files = ds.getIncludedFiles();
@@ -98,6 +107,11 @@ public class S3Upload extends AWSTask {
 		if (publicRead) {
 			obj.setAcl(bucketAcl);
 		}
+		if (cacheNeverExpires) {
+			obj.addMetadata("Expires",
+				formatDate(new Date(new Date().getTime() + YEAR_MILLISECONDS)));
+			obj.addMetadata("Cache-Control", "public, max-age=" + (MONTH_SECONDS * 3));
+		}
 		File f = new File(d, file);
         obj.setContentLength(f.length());
 		obj.setContentType(new MimetypesFileTypeMap().getContentType(f));
@@ -110,6 +124,12 @@ public class S3Upload extends AWSTask {
 		if (verbose) {
 			log("copied : "+key);
 		}
+	}
+
+	private String formatDate(Date date) {
+		DateFormat httpDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+		httpDateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+		return httpDateFormat.format(date);
 	}
 
 	/**
