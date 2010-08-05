@@ -38,6 +38,9 @@ public class S3Upload extends AWSTask {
 	protected Vector<FileSet> filesets = new Vector<FileSet>();
 	private AccessControlList bucketAcl;
 	private boolean cacheNeverExpires = false;
+	protected String mimeTypesFile = null;
+
+	private MimetypesFileTypeMap mimeTypesMap;
 
 	public void setBucket(String bucket) {
 		this.bucket = bucket;
@@ -59,6 +62,10 @@ public class S3Upload extends AWSTask {
 		this.cacheNeverExpires = cacheNeverExpires;
 	}
 
+	public void setMimeTypesFile(String mimeTypesFile) {
+		this.mimeTypesFile = mimeTypesFile;
+	}
+
 	public void execute() throws BuildException {
 		checkParameters();
 
@@ -69,6 +76,11 @@ public class S3Upload extends AWSTask {
 			if (publicRead) {
 				bucketAcl = s3.getBucketAcl(bucket);
 				bucketAcl.grantPermission(GroupGrantee.ALL_USERS, Permission.PERMISSION_READ);
+			}
+			if (mimeTypesFile != null) {
+				this.mimeTypesMap = new MimetypesFileTypeMap(mimeTypesFile);
+			} else {
+				this.mimeTypesMap = new MimetypesFileTypeMap();
 			}
         	for (FileSet fs : filesets) {
 				try {
@@ -113,8 +125,8 @@ public class S3Upload extends AWSTask {
 			obj.addMetadata("Cache-Control", "public, max-age=" + (MONTH_SECONDS * 3));
 		}
 		File f = new File(d, file);
-        obj.setContentLength(f.length());
-		obj.setContentType(new MimetypesFileTypeMap().getContentType(f));
+		obj.setContentLength(f.length());
+		obj.setContentType(this.mimeTypesMap.getContentType(f));
         try {
             obj.setDataInputFile(f);
             obj = s3.putObject(bucket, obj);
