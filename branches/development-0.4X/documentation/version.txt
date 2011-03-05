@@ -1,0 +1,11 @@
+0.4X 2011-03-XX
+===============
+1. Updated ant.jar lib file to version 1.8.
+1. Updated jets3t lib file to 0.8.0.
+2. Added S3Download taskdef.
+3. Added S3Synchronize taskdef.
+4. Added new/changed support to S3Upload.
+5. Added S3Object support to S3Delete.
+6. Added antlib.xml file to distributable jar.
+7. Moved test tasks out of build.xml into examples.xml Ant file.
+8. Added examples-antlib.xml Ant file.
