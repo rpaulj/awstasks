@@ -1,99 +1,72 @@
 <project name="awstasks" default="compile" basedir=".">
-	<property name="awstasks.build" value="build"/>
-	<property name="awstasks.classes" value="${awstasks.build}/classes"/>
-	<property name="awstasks.src" value="java"/>
-	<property name="awstasks.lib" value="lib"/>
-	<property name="awstasks.jar" value="${awstasks.build}/jar"/>
-	<property name="awstasks.jar.filename" value="${awstasks.jar}/awstasks"/>
-    <property name="awstasks.javadoc" value="${awstasks.build}/apidocs" />
-    <property name="awstasks.dist" value="dist" />
+	
+ <!-- PROPERTIES -->
+	
+ <property name="awstasks.build"        value="build"/>
+ <property name="awstasks.classes"      value="${awstasks.build}/classes"/>
+ <property name="awstasks.src"          value="java"/>
+ <property name="awstasks.lib"          value="lib"/>
+ <property name="awstasks.jar"          value="${awstasks.build}/jar"/>
+ <property name="awstasks.jar.filename" value="${awstasks.jar}/awstasks"/>
+ <property name="awstasks.javadoc"      value="${awstasks.build}/apidocs" />
+ <property name="awstasks.dist"         value="dist" />
 
-	<path id="classpath.compile" >
-		<fileset dir="${awstasks.lib}"/>
-		<pathelement location="${awstasks.classes}" />
-	</path>
+ <property name="rel.version" value="1.9X" />
 
-	<target name="init">
-		<mkdir dir="${awstasks.build}" />
-		<mkdir dir="${awstasks.classes}" />
-        <mkdir dir="${awstasks.jar}" />
-        <mkdir dir="${awstasks.javadoc}" />
-	</target>
+ <path id="classpath.compile" >
+  <fileset dir="${awstasks.lib}" />
+  <pathelement location="${awstasks.classes}" />
+ </path>
 
-	<target name="compile" depends="init">
-		<javac destdir="${awstasks.classes}" srcdir="${awstasks.src}" classpathref="classpath.compile" debug="YES" deprecation="yes" target="1.5"/>
-	</target>
+ <!-- BUILD -->
+	
+ <target name="init">
+  <mkdir dir="${awstasks.build}" />
+  <mkdir dir="${awstasks.classes}" />
+  <mkdir dir="${awstasks.jar}" />
+  <mkdir dir="${awstasks.javadoc}" />
+ </target>
 
-	<target name="jar" depends="compile">
-		<input message="Enter the version # : " addproperty="rel.version"/>
-        <jar destfile="${awstasks.jar.filename}-${rel.version}.jar" basedir="${awstasks.classes}"/>
-	</target>
+ <target name="compile" depends="init">
+  <javac destdir="${awstasks.classes}" srcdir="${awstasks.src}" classpathref="classpath.compile" debug="YES" deprecation="yes" target="1.6" />
+  <copy file="antlib.xml" todir="${awstasks.classes}/dak/ant" />
+ </target>
 
-	<target name="javadoc" depends="init">
-		<javadoc packagenames="dak.*"
-				sourcepath="${awstasks.src}"
-				defaultexcludes="yes"
-				destdir="${awstasks.javadoc}"
-				author="true"
-				version="true"
-				use="true"
-				windowtitle="awstasks - ant tasks for working with Amazon Web Services">
-			<classpath refid="classpath.compile"/>
-			<link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
-		</javadoc>
-	</target>
+ <target name="jar" depends="compile">
+  <jar destfile="${awstasks.jar.filename}-${rel.version}.jar" >
+   <fileset dir="${awstasks.classes}" />
+   <fileset file="tasks.properties"   />
+  </jar>
+ </target>
 
-	<target name="dist" depends="clean, jar, javadoc">
-		<input message="Enter the version # : " addproperty="rel.version"/>
-		<mkdir dir="${awstasks.dist}"/>
-		<zip destfile="${awstasks.dist}/awstasks-${rel.version}.zip">
-			<fileset file="${awstasks.jar.file}"/>
-			<fileset file="README"/>
-			<fileset file="LICENSE.txt"/>
-			<fileset dir="${awstasks.build}">
-				<include name="apidocs/**/*"/>
-			</fileset>
-		</zip>
-	</target>
+ <target name="javadoc" depends="init">
+  <javadoc packagenames="dak.*"
+           sourcepath="${awstasks.src}"
+           defaultexcludes="yes"
+           destdir="${awstasks.javadoc}"
+           author="true"
+           version="true"
+           use="true"
+           windowtitle="awstasks - ant tasks for working with Amazon Web Services">
+   <classpath refid="classpath.compile"/>
+   <link href="http://java.sun.com/j2se/1.6.0/docs/api"/>
+  </javadoc>
+ </target>
 
-	<target name="clean" description="Deletes all the generated artifacts.">
-		<delete dir="${awstasks.build}" />
-	</target>
+ <target name="dist" depends="clean, jar, javadoc">
+  <mkdir dir="${awstasks.dist}"/>
+  <zip destfile="${awstasks.dist}/awstasks-${rel.version}.zip">
+   <fileset file="${awstasks.jar.file}"/>
+   <fileset file="README"/>
+   <fileset file="LICENSE.txt"/>
+   <fileset dir="${awstasks.build}">
+    <include name="apidocs/**/*"/>
+   </fileset>
+  </zip>
+ </target>
 
-	<!-- this is sample build stuff that shows how to use the hotswap target -->
-
-
-	<target name="upload">
-		<taskdef name="S3Upload" classname="dak.ant.taskdefs.S3Upload">
-			<classpath refid="classpath.compile"/>
-		</taskdef>
-		<taskdef name="S3Delete" classname="dak.ant.taskdefs.S3Delete">
-			<classpath refid="classpath.compile"/>
-		</taskdef>
-		<S3Delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="test.bucket" prefix="classes/"/>
-		<property file="${basedir}/aws.properties"/>
-		<S3Upload verbose="true"
-				accessId="${aws.accessId}"
-				secretKey="${aws.secretKey}"
-				bucket="test.bucket">
-			<fileset dir="${awstasks.build}" includes="**/*"/>
-		</S3Upload>
-	</target>
-<!--
-	<target name="download">
-		<taskdef name="S3Download" classname="dak.ant.taskdefs.S3Download">
-			<classpath refid="classpath.compile"/>
-		</taskdef>
-		<property file="${basedir}/aws.properties"/>
-		<S3Download verbose="true"
-				accessId="${aws.accessId}"
-				secretKey="${aws.secretKey}"
-				bucket="lifeguard"
-				prefix=""
-				key=""
-				toDir=".">
-		</S3Download>
-	</target>
--->
+ <target name="clean" description="Deletes all the generated artifacts.">
+  <delete dir="${awstasks.build}" />
+ </target>
 
 </project>

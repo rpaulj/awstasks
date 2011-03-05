@@ -1,0 +1,134 @@
+<project name="awstasks-antlib-examples" basedir="." xmlns:s3="antlib:dak.ant">
+
+ <!-- NOTE
+      Using the antlib requires awstasks.jar and all associated lib jars to be in either ANT_HOME or <user>/.ant/lib or else
+      specified as a -lib parameter on the command line.
+   -->
+	
+ <!-- PROPERTIES -->
+
+ <property name="examples.credentials" value="aws.properties"     />
+ <property name="examples.bucket"      value="awstasks-test"      />
+ <property name="examples.dir"         value="${basedir}/runtime" />
+
+ <s3:objectset bucket="${examples.bucket}" id="configuration-files">
+  <s3:object key="awstasks.config" />
+ </s3:objectset>
+	
+ <!-- DELETE -->
+
+ <target name="delete-regex">
+  <property file="${examples.credentials}" />
+  <s3:delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="${examples.bucket}" prefix="" fileregex="test.*" />
+ </target>
+
+ <target name="delete-objectset">
+  <property file="${examples.credentials}" />
+  <s3:delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" prefix="" >
+   <s3:objectset bucket="${examples.bucket}" includes="**/*.bak" />
+  </s3:delete>
+ </target>
+	
+ <!-- UPLOAD -->
+
+ <target name="upload-new-or-changed">
+  <property file="${examples.credentials}" />
+  <s3:upload verbose="true" 
+  	         accessId="${aws.accessId}" 
+  	         secretKey="${aws.secretKey}"
+  	         bucket="${examples.bucket}"
+  	         upload="new,changed">
+   <fileset dir="${examples.dir}/upload" includes="**/*" excludes="**/.DSStore" />
+  </s3:upload>
+ </target>
+	
+ <!-- DOWNLOAD -->
+
+ <target name="download-all">
+  <property file="${examples.credentials}" />
+  <s3:download verbose="true"
+	           accessId="${aws.accessId}"
+               secretKey="${aws.secretKey}"
+               dir="${examples.dir}/download/all"
+               download="new,changed">
+  	<s3:objectset bucket="${examples.bucket}" />
+  </s3:download>
+ </target>
+		
+ <target name="download-includes">
+  <property file="${examples.credentials}" />
+  <s3:download verbose="true"
+               accessId="${aws.accessId}"
+               secretKey="${aws.secretKey}"
+               dir="${examples.dir}/download/includes"
+               download="new,changed">
+   <s3:objectset bucket="${examples.bucket}" includes="**/*.jar" />
+  </s3:download>
+ </target>
+
+ <target name="download-excludes">
+  <property file="${examples.credentials}" />
+  <s3:download verbose="true"
+  	           accessId="${aws.accessId}"
+	           secretKey="${aws.secretKey}"
+	           dir="${examples.dir}/download/excludes"
+               download="new,changed">
+   <s3:objectset bucket="${examples.bucket}" excludes="**/*.jar" />
+  </s3:download>
+ </target>
+
+ <target name="download-list">
+  <property file="${examples.credentials}" />
+  <s3:download verbose="true"
+	  	       accessId="${aws.accessId}"
+		       secretKey="${aws.secretKey}"
+               dir="${examples.dir}/download/list">
+   <s3:objectset bucket="${examples.bucket}">
+   	<s3:object key="development.ecf" />
+   </s3:objectset>
+  </s3:download>
+ </target>
+	
+ <target name="download-refid">
+  <property file="${examples.credentials}" />
+  <s3:download verbose="true"
+	  	       accessId="${aws.accessId}"
+  	           secretKey="${aws.secretKey}"
+	           dir="${examples.dir}/download/refid">
+   <s3:objectset refid="configuration-files" />
+  </s3:download>
+ </target>
+	
+ <!-- SYNCHRONIZE -->
+
+ <target name="synchronize-upload">
+  <property file="${examples.credentials}" />
+  <s3:synchronize accessId="${aws.accessId}" 
+  	              secretKey="${aws.secretKey}" 
+  	              bucket="${examples.bucket}"
+  	              direction="upload"
+ 	              delete="false"
+ 	              revert="false"
+                  includeDirectories="true"
+  	              noAction="false"
+  	              verbose="true" >
+   <fileset dir="${examples.dir}/synchronize" includes="**/*" excludes="**/.DSStore" />
+  </s3:synchronize>
+ </target>
+
+ <target name="synchronize-download">
+  <property file="${examples.credentials}" />
+  <s3:synchronize accessId="${aws.accessId}" 
+  	              secretKey="${aws.secretKey}" 
+  	              bucket="${examples.bucket}"
+  	              direction="download"
+ 	              delete="false"
+ 	              revert="false"
+                  includeDirectories="true"
+  	              noAction="false"
+  	              verbose="true" >
+   <fileset dir="${examples.dir}/synchronize" includes="**/*" excludes="**/.DSStore" />
+  </s3:synchronize>
+ </target>
+	
+</project>

@@ -1,0 +1,7 @@
+NEXT
+====
+
+TODO
+====
+1. Add S3Copy task from issues.
+2. Merge S3FileSet and S3ObjectSet implementation.

@@ -1,0 +1,166 @@
+<project name="awstasks-examples" basedir=".">
+
+ <!-- PROPERTIES -->
+
+ <property name="awstasks.classes" value="${basedir}/build/classes"/>
+ <property name="awstasks.lib"     value="${basedir}/lib"/>
+	 
+ <property name="examples.credentials" value="aws.properties"     />
+ <property name="examples.bucket"      value="awstasks-test"      />
+ <property name="examples.dir"         value="${basedir}/runtime" />
+
+ <path id="classpath.compile" >
+  <fileset dir="${awstasks.lib}" />
+  <pathelement location="${awstasks.classes}" />
+ </path>
+
+ <taskdef name="s3-upload" classname="dak.ant.taskdefs.S3Upload">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
+	
+ <taskdef name="s3-download" classname="dak.ant.taskdefs.S3Download">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
+
+ <taskdef name="s3-synchronize" classname="dak.ant.taskdefs.S3Synchronize">
+  <classpath refid="classpath.compile" />
+ </taskdef>
+	
+ <taskdef name="s3-delete" classname="dak.ant.taskdefs.S3Delete">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
+
+ <typedef name="objectset" classname="dak.ant.typedefs.S3ObjectSet">
+  <classpath refid="classpath.compile"/>
+ </typedef>
+	
+ <typedef name="object" classname="dak.ant.typedefs.S3ObjectWrapper">
+  <classpath refid="classpath.compile"/>
+ </typedef>
+	
+  <!-- NOTE: using an objectset with a refid requires the classes to be in the Ant path/home. 
+             For seemingly obscure reasons (probably http://ant.apache.org/faq.html#delegating-classloader-1.6) 
+             a typedef does not work.
+   -->
+
+ <objectset bucket="${examples.bucket}" id="configuration-files">
+  <object key="development.conf" />
+ </objectset>
+	
+ <!-- DELETE -->
+
+ <target name="delete-regex">
+  <property file="${examples.credentials}" />
+  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="${examples.bucket}" prefix="" fileregex="test.*" />
+ </target>
+
+ <target name="delete-objectset">
+  <property file="${examples.credentials}" />
+  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" prefix="" >
+   <objectset bucket="${examples.bucket}" includes="**/*.bak" />
+  </s3-delete>
+ </target>
+	
+ <!-- UPLOAD -->
+
+ <target name="upload-new-or-changed">
+  <property file="${examples.credentials}" />
+  <s3-upload verbose="true" 
+  	         accessId="${aws.accessId}" 
+  	         secretKey="${aws.secretKey}"
+  	         bucket="${examples.bucket}"
+  	         upload="new,changed">
+   <fileset dir="${examples.dir}/upload" includes="**/*" excludes="**/.DSStore" />
+  </s3-upload>
+ </target>
+	
+ <!-- DOWNLOAD -->
+
+ <target name="download-all">
+  <property file="${examples.credentials}" />
+  <s3-download verbose="true"
+	           accessId="${aws.accessId}"
+               secretKey="${aws.secretKey}"
+               dir="${examples.dir}/download/all"
+               download="new,changed">
+  	<objectset bucket="${examples.bucket}" />
+  </s3-download>
+ </target>
+		
+ <target name="download-includes">
+  <property file="${examples.credentials}" />
+  <s3-download verbose="true"
+               accessId="${aws.accessId}"
+               secretKey="${aws.secretKey}"
+               dir="${examples.dir}/download/includes"
+               download="new,changed">
+   <objectset bucket="${examples.bucket}" includes="**/*.jar" />
+  </s3-download>
+ </target>
+
+ <target name="download-excludes">
+  <property file="${examples.credentials}" />
+  <s3-download verbose="true"
+  	           accessId="${aws.accessId}"
+	           secretKey="${aws.secretKey}"
+	           dir="${examples.dir}/download/excludes"
+               download="new,changed">
+   <objectset bucket="${examples.bucket}" excludes="**/*.jar" />
+  </s3-download>
+ </target>
+
+ <target name="download-list">
+  <property file="${examples.credentials}" />
+  <s3-download verbose="true"
+	  	       accessId="${aws.accessId}"
+		       secretKey="${aws.secretKey}"
+               dir="${examples.dir}/download/list">
+   <objectset bucket="${examples.bucket}">
+   	<object key="development.ecf" />
+   </objectset>
+  </s3-download>
+ </target>
+	
+ <target name="download-refid">
+  <property file="${examples.credentials}" />
+  <s3-download verbose="true"
+	  	       accessId="${aws.accessId}"
+  	           secretKey="${aws.secretKey}"
+	           dir="${examples.dir}/download/refid">
+   <objectset refid="configuration-files" />
+  </s3-download>
+ </target>
+	
+ <!-- SYNCHRONIZE -->
+
+ <target name="synchronize-upload">
+  <property file="${examples.credentials}" />
+  <s3-synchronize accessId="${aws.accessId}" 
+  	              secretKey="${aws.secretKey}" 
+  	              bucket="${examples.bucket}"
+  	              direction="upload"
+ 	              delete="false"
+ 	              revert="false"
+                  includeDirectories="true"
+  	              noAction="false"
+  	              verbose="true" >
+   <fileset dir="${examples.dir}/synchronize" includes="**/*" excludes="**/.DSStore" />
+  </s3-synchronize>
+ </target>
+
+ <target name="synchronize-download">
+  <property file="${examples.credentials}" />
+  <s3-synchronize accessId="${aws.accessId}" 
+  	              secretKey="${aws.secretKey}" 
+  	              bucket="${examples.bucket}"
+  	              direction="download"
+ 	              delete="false"
+ 	              revert="false"
+                  includeDirectories="true"
+  	              noAction="false"
+  	              verbose="true" >
+   <fileset dir="${examples.dir}/synchronize" includes="**/*" excludes="**/.DSStore" />
+  </s3-synchronize>
+ </target>
+	
+</project>
