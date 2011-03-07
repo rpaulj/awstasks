@@ -30,11 +30,11 @@
   <classpath refid="classpath.compile"/>
  </taskdef>
 
- <typedef name="objectset" classname="dak.ant.typedefs.S3ObjectSet">
+ <typedef name="objectset" classname="dak.ant.types.S3ObjectSet">
   <classpath refid="classpath.compile"/>
  </typedef>
 	
- <typedef name="object" classname="dak.ant.typedefs.S3ObjectWrapper">
+ <typedef name="object" classname="dak.ant.types.S3ObjectWrapper">
   <classpath refid="classpath.compile"/>
  </typedef>
 	

@@ -10,7 +10,7 @@
  
  <!-- TYPES -->
 
- <typedef name="objectset" classname="dak.ant.typedefs.S3ObjectSet"     />
- <typedef name="object"    classname="dak.ant.typedefs.S3ObjectWrapper" />
+ <typedef name="objectset" classname="dak.ant.types.S3ObjectSet"     />
+ <typedef name="object"    classname="dak.ant.types.S3ObjectWrapper" />
  
 </antlib>
