@@ -1,7 +1,9 @@
 package dak.ant.taskdefs;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.tools.ant.BuildException;
@@ -19,11 +21,17 @@ import dak.ant.types.S3FileSet;
  * @author chris
  *
  */
-public class S3Copy extends S3FileSetTask {
-    private String toBucket;
-    private String fromBucket;
-    private String prefix;
-    private Pattern filePattern;
+public class S3Copy extends AWSTask {
+    
+    // INSTANCE VARIABLES
+    
+    private String          toBucket;
+    private String          fromBucket;
+    private String          prefix;
+    private Pattern         filePattern;
+    private List<S3FileSet> fileSets = new ArrayList<S3FileSet>();
+
+    // PROPERTIES
     
     public void setToBucket(String bucket) {
         this.toBucket = bucket;
@@ -40,6 +48,17 @@ public class S3Copy extends S3FileSetTask {
     public void setFileRegex(String regex) {
        this.filePattern = Pattern.compile(regex);
     }
+
+    public void addS3FileSet(S3FileSet set) {
+        fileSets.add( set );
+    }
+    
+    protected boolean isFileSetMode() {
+       return fileSets.size( ) > 0;
+    }
+
+
+    // IMPLEMENTATION
 
     @Override
     public void execute() throws BuildException {
