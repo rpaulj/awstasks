@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 import org.apache.tools.ant.BuildException;
 import org.jets3t.service.S3Service;
-import org.jets3t.service.S3ServiceException;
+import org.jets3t.service.ServiceException;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
 import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.S3Object;
@@ -59,7 +59,7 @@ public class S3Copy extends S3FileSetTask {
     }
 
    @SuppressWarnings("unchecked")
-   private void doFileSetCopy( S3FileSet fileSet ) throws S3ServiceException {
+   private void doFileSetCopy( S3FileSet fileSet ) throws ServiceException {
       
       AWSCredentials credentials = fileSet.getCredentials( );
       S3Service s3 = new RestS3Service(credentials);
@@ -78,7 +78,7 @@ public class S3Copy extends S3FileSetTask {
       }  
    }
 
-   private void doNonFileSetCopy( ) throws S3ServiceException {
+   private void doNonFileSetCopy( ) throws ServiceException {
       
       AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
       S3Service s3 = new RestS3Service(credentials);

@@ -1,4 +1,4 @@
-package dak.ant.typedefs;
+package dak.ant.types;
 
 import java.io.File;
 
