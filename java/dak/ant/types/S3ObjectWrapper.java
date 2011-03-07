@@ -1,4 +1,4 @@
-package dak.ant.typedefs;
+package dak.ant.types;
 
 import org.apache.tools.ant.types.DataType;
 import org.jets3t.service.model.S3Object;
