@@ -8,7 +8,6 @@ import org.apache.tools.ant.BuildException;
 import org.jets3t.service.S3Service;
 import org.jets3t.service.ServiceException;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
-import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.S3Object;
 import org.jets3t.service.security.AWSCredentials;
 
@@ -82,13 +81,12 @@ public class S3Copy extends S3FileSetTask {
       
       AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
       S3Service s3 = new RestS3Service(credentials);
-      S3Bucket fromBucket = new S3Bucket(this.fromBucket);
       
       S3Object[] objectListing;
       if (prefix != null)
-          objectListing = s3.listObjects(fromBucket, prefix, null);
+          objectListing = s3.listObjects(this.fromBucket, prefix, null);
       else
-          objectListing = s3.listObjects(fromBucket);
+          objectListing = s3.listObjects(this.fromBucket);
       for (S3Object object : objectListing) {
           if (objectMatches(object)) {
              s3.copyObject( this.fromBucket, object.getKey( ), toBucket, object, true );

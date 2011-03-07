@@ -33,7 +33,6 @@ import org.apache.tools.ant.types.selectors.TypeSelector;
 import org.apache.tools.ant.types.selectors.modifiedselector.ModifiedSelector;
 import org.jets3t.service.S3Service;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
-import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.S3Object;
 import org.jets3t.service.security.AWSCredentials;
 
@@ -79,7 +78,7 @@ public class S3FileSet extends DataType implements ResourceCollection,SelectorCo
         return bucket;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "rawtypes" })
     public Iterator iterator() {
 
         if (isReference()) {
@@ -113,13 +112,12 @@ public class S3FileSet extends DataType implements ResourceCollection,SelectorCo
 
         try {
             S3Service s3 = new RestS3Service(credentials);
-            S3Bucket bucket = new S3Bucket(this.bucket);
             S3Object[] objectListing;
 
             if (prefix != null)
-                objectListing = s3.listObjects(bucket, prefix, null);
+                objectListing = s3.listObjects(this.bucket, prefix, null);
             else
-                objectListing = s3.listObjects(bucket);
+                objectListing = s3.listObjects(this.bucket);
 
             for (S3Object object : objectListing) {
 
@@ -244,7 +242,7 @@ public class S3FileSet extends DataType implements ResourceCollection,SelectorCo
         return selectors.size();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "rawtypes" })
     public Enumeration selectorElements() {
         return Collections.enumeration(selectors);
     }

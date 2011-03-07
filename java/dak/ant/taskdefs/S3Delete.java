@@ -11,8 +11,8 @@ import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.S3Object;
 import org.jets3t.service.security.AWSCredentials;
 
-import dak.ant.typedefs.S3ObjectSet;
-import dak.ant.typedefs.S3ObjectWrapper;
+import dak.ant.types.S3ObjectSet;
+import dak.ant.types.S3ObjectWrapper;
 import dak.ant.util.S3BucketScanner;
 
 public class S3Delete extends AWSTask { 
