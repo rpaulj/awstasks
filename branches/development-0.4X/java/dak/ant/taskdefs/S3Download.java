@@ -20,8 +20,8 @@ import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.utils.FileComparer;
 import org.jets3t.service.utils.FileComparerResults;
 
-import dak.ant.typedefs.S3ObjectSet;
-import dak.ant.typedefs.S3ObjectWrapper;
+import dak.ant.types.S3ObjectSet;
+import dak.ant.types.S3ObjectWrapper;
 import dak.ant.util.S3BucketScanner;
 
 /**

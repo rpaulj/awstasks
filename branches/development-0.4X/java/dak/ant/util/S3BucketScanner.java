@@ -8,7 +8,7 @@ import org.apache.tools.ant.types.selectors.SelectorUtils;
 import org.jets3t.service.S3Service;
 import org.jets3t.service.model.S3Object;
 
-import dak.ant.typedefs.S3ObjectWrapper;
+import dak.ant.types.S3ObjectWrapper;
 
 /**
  * S3 analogue to Ant FileSet DirectoryScanner. Copied unashamedly from
