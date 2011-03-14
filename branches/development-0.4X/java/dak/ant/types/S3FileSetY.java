@@ -17,18 +17,18 @@ import dak.ant.util.S3BucketScanner;
  * 
  * @author Tony Seebregts
  */
-public class S3ObjectSet extends DataType { 
+public class S3FileSetY extends DataType { 
     
     // INSTANCE VARIABLES
 
-    private String bucket;
-    private boolean errorOnMissingBucket = true;
-    private List<S3ObjectWrapper> selected = new ArrayList<S3ObjectWrapper>();
-    private PatternSet defaultPatterns = new PatternSet();
-    private List<PatternSet> additionalPatterns = new ArrayList<PatternSet>();
-    private S3BucketScanner scanner;
+    private String                bucket;
+    private boolean               errorOnMissingBucket = true;
+    private List<S3ObjectWrapper> selected             = new ArrayList<S3ObjectWrapper>();
+    private PatternSet            defaultPatterns      = new PatternSet();
+    private List<PatternSet>      additionalPatterns   = new ArrayList<PatternSet>();
+    private S3BucketScanner       scanner;
 
-    public S3ObjectSet() {
+    public S3FileSetY() {
     }
 
     // PROPERTIES
@@ -162,6 +162,15 @@ public class S3ObjectSet extends DataType {
     // INSTANCE METHODS
 
     /**
+     * Performs the check for circular references and returns the referenced
+     * S3ObjectSet.
+     * 
+     */
+    private S3FileSetY getRef(Project project) {
+        return (S3FileSetY) getCheckedRef(project);
+    }
+
+    /**
      * Returns the S3 bucket scanner needed to fetch/filter the S3 objects to
      * process.
      * 
@@ -226,15 +235,6 @@ public class S3ObjectSet extends DataType {
         bs.scan();
 
         return bs;
-    }
-
-    /**
-     * Performs the check for circular references and returns the referenced
-     * S3ObjectSet.
-     * 
-     */
-    private S3ObjectSet getRef(Project project) {
-        return (S3ObjectSet) getCheckedRef(project);
     }
 
     /**

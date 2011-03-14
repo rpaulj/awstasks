@@ -2,6 +2,8 @@ package dak.ant.types;
 
 import java.io.File;
 
+import org.jets3t.service.model.S3Object;
+
 /**
  * Attempt to make S3 objects compatible with ant file selectors.
  * This could probably be done a lot better. One thing to explore would
@@ -18,34 +20,70 @@ import java.io.File;
  * @author chris
  *
  */
-public class S3File extends File
-{
-   private static final long serialVersionUID = 1825082919531083517L;
+@SuppressWarnings("serial")
+public class S3File extends File 
+       { private final String bucket;
+         private final String key;
+         private final int    hashcode;
+         
+         private long         lastModified;
+   
+         public S3File(String bucket,String key)
+                { super(key);
+                 
+                  this.bucket   = bucket;
+                  this.key      = key;
+                  this.hashcode = (bucket + "/" + key).hashCode();
+                }
+         
+         
+         public S3File(S3Object object)
+                { super(object.getKey());
+                 
+                  this.bucket       = object.getBucketName();
+                  this.key          = object.getKey();
+                  this.hashcode     = (bucket + "/" + key).hashCode();
+                  this.lastModified = object.getLastModifiedDate().getTime();
+                }
 
-   private long lastModified;
+         @Override
+         public boolean isDirectory()
+                { return false; // currently no such thing as a directory.
+                }
    
-   public S3File( String pathname )
-   {
-      super( pathname );
-   }
+         @Override
+         public boolean setLastModified(long time) 
+                { lastModified = time;
+                
+                  return true;
+                }
+   
+         @Override
+         public long lastModified()
+                { return lastModified;
+                }
+         
+         public String getKey()
+                { return key;
+                }
 
-   @Override
-   public boolean isDirectory( )
-   {
-      return false; // currently no such thing as a directory.
-   }
-   
-   @Override
-   public boolean setLastModified( long time ) {
-      lastModified = time;
-      return true;
-   }
-   
-   @Override
-   public long lastModified( )
-   {
-      return lastModified;
-   }
-   
-   
-}
+         // *** Object ***
+
+         @Override
+         public boolean equals(Object object)
+                { if (object instanceof S3File)
+                     if (bucket.equals(((S3File) object).bucket))
+                        if (key.equals(((S3File) object).key))
+                           return true;
+
+                  return false;
+                }
+
+         @Override
+         public int hashCode() 
+                { return hashcode;
+                }
+          
+         
+         
+       }
