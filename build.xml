@@ -18,6 +18,18 @@
   <pathelement location="${awstasks.classes}" />
  </path>
 
+ <taskdef name="s3-deletex" classname="dak.ant.taskdefs.S3DeleteX">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
+
+ <typedef name="s3filesetx" classname="dak.ant.types.S3FileSetX">
+  <classpath refid="classpath.compile"/>
+ </typedef>
+
+ <typedef name="s3objectsetx" classname="dak.ant.types.S3ObjectSetX">
+  <classpath refid="classpath.compile"/>
+ </typedef>
+
  <!-- BUILD -->
 	
  <target name="init">
@@ -69,4 +81,22 @@
   <delete dir="${awstasks.build}" />
  </target>
 
+ <!-- TEST STUFF -->
+	
+ <target name="delete-fileset" depends="compile">
+  <property file="../../dist/aws.properties" />
+  <s3-deletex accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3filesetx bucket="provantage-development" includes="**/*.jar" />
+  </s3-deletex>
+ </target>
+<!--
+ <target name="delete-objectset" depends="compile">
+  <property file="../../dist/aws.properties" />
+  <s3-deletex accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3objectsetx bucket="provantage-development">
+   	<date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
+   </s3objectsetx>
+  </s3-deletex>
+ </target>
+-->
 </project>

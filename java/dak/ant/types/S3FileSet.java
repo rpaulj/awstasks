@@ -36,11 +36,13 @@ import org.jets3t.service.impl.rest.httpclient.RestS3Service;
 import org.jets3t.service.model.S3Object;
 import org.jets3t.service.security.AWSCredentials;
 
-public class S3FileSet extends DataType implements ResourceCollection,SelectorContainer {
-    private String accessId;
-    private String secretKey;
-    private String bucket;
-    private String prefix;
+public class S3FileSet extends DataType implements ResourceCollection,SelectorContainer 
+       { // CONSTANTS
+    
+         private String accessId;
+         private String secretKey;
+         private String bucket;
+         private String prefix;
 
     /**
      * Ant likes to be Java 1.2 compat. I don't. Other tasks in this package
@@ -122,7 +124,7 @@ public class S3FileSet extends DataType implements ResourceCollection,SelectorCo
             for (S3Object object : objectListing) {
 
                 String fileName = object.getKey();
-                S3File file = new S3File(fileName);
+                S3File file = new S3File(bucket,fileName);
                 file.setLastModified(object.getLastModifiedDate().getTime());
 
                 if (isSelected(fileName, file)) {
