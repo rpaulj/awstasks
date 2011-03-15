@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -29,28 +31,27 @@ import org.apache.tools.ant.types.selectors.OrSelector;
 import org.apache.tools.ant.types.selectors.PresentSelector;
 import org.apache.tools.ant.types.selectors.SelectSelector;
 import org.apache.tools.ant.types.selectors.SelectorContainer;
+import org.apache.tools.ant.types.selectors.SelectorUtils;
 import org.apache.tools.ant.types.selectors.SizeSelector;
 import org.apache.tools.ant.types.selectors.TypeSelector;
 import org.apache.tools.ant.types.selectors.modifiedselector.ModifiedSelector;
 import org.jets3t.service.S3Service;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
-import org.jets3t.service.model.S3Bucket;
+import org.jets3t.service.model.S3Object;
 import org.jets3t.service.security.AWSCredentials;
-
-import dak.ant.util.S3BucketScannerX;
 
 public class S3FileSetX extends DataType implements ResourceCollection,SelectorContainer 
        { // INSTANCE VARIABLES
     
          private String             bucket;
          private String             prefix;
+         private S3File[]           files                = new S3File[0];
          private PatternSet         defaultPatterns      = new PatternSet();
          private List<PatternSet>   additionalPatterns   = new ArrayList<PatternSet>  ();
          private List<FileSelector> selectors            = new ArrayList<FileSelector>();
          private boolean            errorOnMissingBucket = true;
          
-         private List<S3File>       selected;
-         private S3BucketScannerX   scanner;
+         private List<S3File>       included;
 
          // TASK ATTRIBUTES
     
@@ -58,8 +59,8 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                 { if (isReference())
                     throw tooManyAttributes();
 
-                  this.bucket  = bucket;
-                  this.scanner = null;
+                  this.bucket   = bucket;
+                  this.included = null;
                 }
 
          /** Returns the S3 bucket attribute, dereferencing it if required.
@@ -75,7 +76,11 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                 }
          
          public void setPrefix(String prefix) 
-                { this.prefix = prefix;
+                { if (isReference())
+                    throw tooManyAttributes();
+
+                  this.prefix   = prefix;
+                  this.included = null;
                 }
 
          /** Appends <code>includes</code> to the current list of include patterns.
@@ -90,7 +95,7 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                      throw tooManyAttributes();
 
                   this.defaultPatterns.setIncludes(includes);
-                  this.scanner = null;
+                  this.included = null;
                 }
 
          /** Appends <code>excludes</code> to the current list of exclude patterns.
@@ -104,8 +109,8 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                 { if (isReference())
                      throw tooManyAttributes();
 
-                  defaultPatterns.setExcludes(excludes);
-                  scanner = null;
+                  this.defaultPatterns.setExcludes(excludes);
+                  this.included = null;
                 }
 
          /** Sets whether an error is thrown if a bucket does not exist. Default value
@@ -118,7 +123,7 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                      throw tooManyAttributes();
 
                   this.errorOnMissingBucket = enabled;
-                  this.scanner = null;
+                  this.included             = null;
                 }
          
          public boolean isFilesystemOnly() 
@@ -126,7 +131,11 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                 }
          
          // SUPPORTED SELECTORS
-         
+
+         public void addFilename(FilenameSelector selector) 
+                { appendSelector(selector);
+                }
+
          public void addDate(DateSelector selector) 
                 { appendSelector(selector);
                 }
@@ -157,7 +166,7 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
 
                   calculateSet(credentials);
 
-                  return selected.iterator();
+                  return included.iterator();
                 }
 
          public int size(AWSCredentials credentials) 
@@ -166,7 +175,7 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
 
                   calculateSet(credentials);
     
-                  return selected.size();
+                  return included.size();
                 }
 
          /** Performs the check for circular references and returns the referenced
@@ -177,35 +186,33 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                  { return (S3FileSetX) getCheckedRef(project);
                  }
 
-         private void calculateSet(AWSCredentials credentials) 
+         private synchronized void calculateSet(AWSCredentials credentials) 
                  { checkParameters();
 
-                   if (selected != null)
+                   // ... cached ?
+                 
+                   if (included != null)
                       return;
 
-                   selected = new ArrayList<S3File>();
+                   // ... scan and select 
+                   
+                   included = new ArrayList<S3File>();
 
                    try 
-                      { S3Service  service = new RestS3Service(credentials);
-//                        S3Object[] objects;
-//
-//                        if (prefix != null)
-//                           objects = service.listObjects(bucket,prefix,null);
-//                           else
-//                           objects = service.listObjects(bucket);
-
-                        S3BucketScannerX scanner = getBucketScanner(getProject(),service);
-                        S3File[]         objects = scanner.getIncludedObjects();
+                      { S3Service   service = new RestS3Service(credentials);
+                        Set<S3File> objects = scan(getProject(),service);
                         
                         for (S3File object: objects) 
                             { if (isSelected(object.getKey(),object)) 
-                                 { selected.add(object);
+                                 { included.add(object);
                                  }
                             }
                       } 
+                   catch(BuildException x)
+                      { throw x;
+                      }
                    catch (Exception x) 
-                      { x.printStackTrace();
-                        throw new BuildException(x);
+                      { throw new BuildException(x);
                       }
                  }
 
@@ -225,74 +232,128 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
         
                    return true;
                  }
-         
-         /** Returns an initialised S3 bucket scanner needed to fetch/filter the S3
-           * objects to process.
-           * 
-           */
-         private S3BucketScannerX getBucketScanner(Project project,S3Service service) throws Exception 
-                 { // ... reference objectset ?
+                 
+         private Set<S3File> scan(Project project,S3Service service) 
+                 { Set<S3File> included = new ConcurrentSkipListSet<S3File>();
 
-                   if (isReference())
-                      return getRef(project).getBucketScanner(project, service);
+                   try 
+                      { // ... validate
 
-                   dieOnCircularReference();
-
-                   // ... real objectset !
-
-                   S3BucketScannerX bs = null;
-
-                   synchronized (this) 
-                      { if ((scanner != null) && (project == getProject()))
-                           bs = scanner;
-                           else
-                           { if (bucket == null)
-                                throw new BuildException("No bucket specified for '" + getDataTypeName() + "'");
-
-                             S3Bucket[] buckets = service.listAllBuckets();
-                             boolean    exists  = false;
-
-                             for (S3Bucket item : buckets) 
-                                 { if (bucket.equals(item.getName())) 
-                                     { exists = true;
-                                       break;
-                                     }
-                                 }
-
-                             if (!exists && errorOnMissingBucket)
-                                throw new BuildException("Bucket '" + bucket + "' does not exist");
-
-                             bs = new S3BucketScannerX(service);
-
-                             setupBucketScanner(bs, project);
-                             bs.setErrorOnMissingBucket(errorOnMissingBucket);
-
-                             scanner = (project == getProject()) ? bs : scanner;
+                        if (service.getBucket(bucket) == null)
+                           { if (errorOnMissingBucket)
+                                throw new BuildException("S3 bucket '" + bucket + "' does not exist");
+                           
+                             return included;
                            }
+
+                        // ... initialise
+                        
+                        PatternSet ps       = mergePatterns(project);
+                        String[]   explicit = keys(files);
+                        String[]   includes = normalize(ps.getIncludePatterns(project));
+                        String[]   excludes = normalize(ps.getExcludePatterns(project));
+
+                        // ... set include/exclude lists
+
+                        if (explicit == null)
+                           explicit = new String[0];
+
+                        if (includes == null)
+                           includes = (explicit.length == 0) ? new String[] { SelectorUtils.DEEP_TREE_MATCH } : new String[0];
+
+                         if (excludes == null)
+                            excludes = new String[0];
+
+                         // ... scan object list
+
+                         S3Object[] list = service.listObjects(bucket);
+
+                         for (S3Object object: list) 
+                             { String  key      = object.getKey();
+                               boolean selected = false;
+                               boolean include  = false;
+                               boolean exclude  = false;
+
+                               for (String pattern: explicit) 
+                                   { if (SelectorUtils.match(pattern, key))
+                                        selected = true;
+                                   }
+
+                               for (String pattern: includes) 
+                                   { if (SelectorUtils.match(pattern, key))
+                                        include = true;
+                                   }
+
+                               for (String pattern: excludes) 
+                                   { if (SelectorUtils.match(pattern, key))
+                                        exclude = true;
+                                   }
+
+                               if (selected || (include && !exclude))
+                                  included.add(new S3File(object));
+                             }
+                         
+                         return included;
+                      } 
+                   catch (BuildException x) 
+                      { throw x;
+                      } 
+                   catch (Exception x) 
+                      { throw new BuildException(x);
                       }
-
-                   bs.scan();
-
-                   return bs;
                  }
 
-         /** Initialises the specified S3 bucket scanner against the specified project.
+         /** Converts a list of S3File to the equivalent list of S3 object keys.
            * 
            */
-         private synchronized void setupBucketScanner(S3BucketScannerX bs,Project project) 
-                 { if (bs == null)
-                      throw new IllegalArgumentException("S3BucketScanner cannot be null");
+         private static String[] keys(S3File[] files) 
+                 { String[] keys  = new String[files == null ? 0 : files.length];
+                   int      index = 0;
 
-                   bs.setBucket(bucket);
+                   if (files != null)
+                     for (S3File file: files)
+                         keys[index++] = file.getKey();
 
-                   PatternSet ps = mergePatterns(project);
+                  return keys;
+                }
+         
+         /** Normalises a list of include/exclude patterns to use. All '\' characters are replaced
+           * by <code>/</code> to match the S3 convention.
+           * <p>
+           * When a pattern ends with a '/' or '\', "**" is appended.
+           * 
+           * @param includes A list of include patterns. May be <code>null</code>,
+           *                indicating that all objects should be included. If a non-
+           *                <code>null</code> list is given, all elements must be non-
+           *                <code>null</code>.
+           */
+         private static String[] normalize(String[] patterns) 
+                 { if (patterns == null) 
+                      return null;
 
-                   bs.setSelected(selected);
-                   bs.setIncludes(ps.getIncludePatterns(project));
-                   bs.setExcludes(ps.getExcludePatterns(project));
+                   String[] normalized = new String[patterns.length];
+
+                   for (int i=0; i<patterns.length; i++) 
+                       { normalized[i] = normalize(patterns[i]);
+                       }
+                  
+                   return normalized;
                  }
          
+         /** All '/' and '\' characters are replaced by <code>/</code> to match the S3 storage convention.
+          * <p>
+          * When a pattern ends with a '/' or '\', "**" is appended.
+          * 
+          */
+        private static String normalize(String pattern) 
+                { String string = pattern.replace('\\', '/');
 
+                  if (string.endsWith("/")) 
+                     { string += SelectorUtils.DEEP_TREE_MATCH;
+                     }
+
+                  return string;
+                }
          /** Get the merged patterns for this objectset.
            * 
            */
@@ -335,10 +396,6 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
 
 
     public void addSize(SizeSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addFilename(FilenameSelector selector) {
         appendSelector(selector);
     }
 
