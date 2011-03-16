@@ -85,7 +85,7 @@
 	
  <target name="delete-fileset-date" depends="compile">
   <property file="../../dist/aws.properties" />
-  <s3-deletex accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+  <s3-deletex accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" dummyRun="true">
    <s3filesetx bucket="provantage-development" includes="**/*.jar" >
    	<date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
    </s3filesetx>
@@ -96,7 +96,7 @@
 	
  <target name="delete-fileset-regex" depends="compile">
   <property file="../../dist/aws.properties" />
-  <s3-deletex accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+  <s3-deletex accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" dummyRun="true">
    <s3filesetx bucket="provantage-development" includes="**/*.jar" >
    	<filename regex="org" />
    </s3filesetx>

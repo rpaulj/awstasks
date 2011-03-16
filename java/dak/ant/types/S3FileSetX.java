@@ -2,8 +2,6 @@ package dak.ant.types;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -14,38 +12,19 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.DataType;
 import org.apache.tools.ant.types.PatternSet;
 import org.apache.tools.ant.types.ResourceCollection;
-import org.apache.tools.ant.types.selectors.AndSelector;
-import org.apache.tools.ant.types.selectors.ContainsRegexpSelector;
-import org.apache.tools.ant.types.selectors.ContainsSelector;
 import org.apache.tools.ant.types.selectors.DateSelector;
-import org.apache.tools.ant.types.selectors.DependSelector;
-import org.apache.tools.ant.types.selectors.DepthSelector;
-import org.apache.tools.ant.types.selectors.DifferentSelector;
-import org.apache.tools.ant.types.selectors.ExtendSelector;
 import org.apache.tools.ant.types.selectors.FileSelector;
 import org.apache.tools.ant.types.selectors.FilenameSelector;
-import org.apache.tools.ant.types.selectors.MajoritySelector;
-import org.apache.tools.ant.types.selectors.NoneSelector;
-import org.apache.tools.ant.types.selectors.NotSelector;
-import org.apache.tools.ant.types.selectors.OrSelector;
-import org.apache.tools.ant.types.selectors.PresentSelector;
-import org.apache.tools.ant.types.selectors.SelectSelector;
-import org.apache.tools.ant.types.selectors.SelectorContainer;
 import org.apache.tools.ant.types.selectors.SelectorUtils;
-import org.apache.tools.ant.types.selectors.SizeSelector;
-import org.apache.tools.ant.types.selectors.TypeSelector;
-import org.apache.tools.ant.types.selectors.modifiedselector.ModifiedSelector;
 import org.jets3t.service.S3Service;
-import org.jets3t.service.impl.rest.httpclient.RestS3Service;
 import org.jets3t.service.model.S3Object;
-import org.jets3t.service.security.AWSCredentials;
 
-public class S3FileSetX extends DataType implements ResourceCollection,SelectorContainer 
+public class S3FileSetX extends DataType implements ResourceCollection 
        { // INSTANCE VARIABLES
     
          private String             bucket;
          private String             prefix;
-         private S3File[]           files                = new S3File[0];
+         private List<S3File>       files                = new ArrayList<S3File>();
          private PatternSet         defaultPatterns      = new PatternSet();
          private List<PatternSet>   additionalPatterns   = new ArrayList<PatternSet>  ();
          private List<FileSelector> selectors            = new ArrayList<FileSelector>();
@@ -130,7 +109,7 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                 { return false;
                 }
          
-         // SUPPORTED SELECTORS
+         // TESTED SELECTORS
 
          public void addFilename(FilenameSelector selector) 
                 { appendSelector(selector);
@@ -160,20 +139,20 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                 { return 0;
                 }
 
-         public Iterator<S3File> iterator(AWSCredentials credentials) 
+         public Iterator<S3File> iterator(S3Service service) 
                 { if (isReference()) 
-                     return ((S3FileSetX) getCheckedRef(getProject())).iterator(credentials);
+                     return ((S3FileSetX) getCheckedRef(getProject())).iterator(service);
 
-                  calculateSet(credentials);
+                  calculateSet(service);
 
                   return included.iterator();
                 }
 
-         public int size(AWSCredentials credentials) 
+         public int size(S3Service service) 
                 { if (isReference()) 
                      return ((S3FileSetX) getCheckedRef(getProject())).size();
 
-                  calculateSet(credentials);
+                  calculateSet(service);
     
                   return included.size();
                 }
@@ -186,11 +165,14 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                  { return (S3FileSetX) getCheckedRef(project);
                  }
 
-         private synchronized void calculateSet(AWSCredentials credentials) 
+         private synchronized void calculateSet(S3Service service) 
                  { checkParameters();
 
                    // ... cached ?
                  
+                   if (service == null)
+                      throw new BuildException("Uninitialized S3 service");
+                   
                    if (included != null)
                       return;
 
@@ -199,8 +181,7 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                    included = new ArrayList<S3File>();
 
                    try 
-                      { S3Service   service = new RestS3Service(credentials);
-                        Set<S3File> objects = scan(getProject(),service);
+                      { Set<S3File> objects = scan(getProject(),service);
                         
                         for (S3File object: objects) 
                             { if (isSelected(object.getKey(),object)) 
@@ -266,7 +247,12 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
 
                          // ... scan object list
 
-                         S3Object[] list = service.listObjects(bucket);
+                         S3Object[] list;
+
+                         if (prefix != null)
+                            list = service.listObjects(bucket, prefix, null);
+                            else
+                            list = service.listObjects(bucket);
 
                          for (S3Object object: list) 
                              { String  key      = object.getKey();
@@ -303,11 +289,11 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                       }
                  }
 
-         /** Converts a list of S3File to the equivalent list of S3 object keys.
+         /** Converts a array of S3File to the equivalent list of S3 object keys.
            * 
            */
-         private static String[] keys(S3File[] files) 
-                 { String[] keys  = new String[files == null ? 0 : files.length];
+         private static String[] keys(List<S3File> files) 
+                 { String[] keys  = new String[files == null ? 0 : files.size()];
                    int      index = 0;
 
                    if (files != null)
@@ -341,19 +327,20 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                  }
          
          /** All '/' and '\' characters are replaced by <code>/</code> to match the S3 storage convention.
-          * <p>
-          * When a pattern ends with a '/' or '\', "**" is appended.
-          * 
-          */
-        private static String normalize(String pattern) 
-                { String string = pattern.replace('\\', '/');
-
-                  if (string.endsWith("/")) 
-                     { string += SelectorUtils.DEEP_TREE_MATCH;
-                     }
-
-                  return string;
-                }
+           * <p>
+           * When a pattern ends with a '/' or '\', "**" is appended.
+           * 
+           */
+         private static String normalize(String pattern) 
+                 { String string = pattern.replace('\\', '/');
+ 
+                   if (string.endsWith("/")) 
+                      { string += SelectorUtils.DEEP_TREE_MATCH;
+                      }
+ 
+                   return string;
+                 }
+   
          /** Get the merged patterns for this objectset.
            * 
            */
@@ -368,91 +355,111 @@ public class S3FileSetX extends DataType implements ResourceCollection,SelectorC
                 }
          
          
-         // *** ### ***
+         // *** UNTESTED SELECTORS ***
 
-    public void addSelector(SelectSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addAnd(AndSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addOr(OrSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addNot(NotSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addNone(NoneSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addMajority(MajoritySelector selector) {
-        appendSelector(selector);
-    }
-
-
-    public void addSize(SizeSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addType(TypeSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addCustom(ExtendSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addPresent(PresentSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addDepth(DepthSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addDepend(DependSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addModified(ModifiedSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void add(FileSelector selector) {
-        appendSelector(selector);
-    }
-
-    public void addContains(ContainsSelector selector) {
-        // ignore, won't work
-    }
-
-    public void addContainsRegexp(ContainsRegexpSelector selector) {
-        // ignore, won't work
-    }
-
-    public void addDifferent(DifferentSelector selector) {
-        // ignore, won't work
-    }
-
-    public FileSelector[] getSelectors(Project aProject) {
-        return (FileSelector[]) selectors.toArray();
-    }
-
-    public boolean hasSelectors() {
-        return selectors.size() != 0;
-    }
-
-    public int selectorCount() {
-        return selectors.size();
-    }
-
-    @SuppressWarnings({ "rawtypes" })
-    public Enumeration selectorElements() {
-        return Collections.enumeration(selectors);
-    }
-}
+//         @Override
+//         public void addSelector(SelectSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addAnd(AndSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addOr(OrSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addNot(NotSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addNone(NoneSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addMajority(MajoritySelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addSize(SizeSelector selector)   
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addType(TypeSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addCustom(ExtendSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addPresent(PresentSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addDepth(DepthSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addDepend(DependSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addModified(ModifiedSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void add(FileSelector selector) 
+//                { appendSelector(selector);
+//                }
+//
+//         @Override
+//         public void addContains(ContainsSelector selector) 
+//                { // ignore, won't work
+//                }
+//
+//         @Override
+//         public void addContainsRegexp(ContainsRegexpSelector selector) 
+//                { // ignore, won't work
+//                }
+//
+//         @Override
+//         public void addDifferent(DifferentSelector selector) 
+//                { // ignore, won't work
+//                }
+//
+//         @Override
+//         public FileSelector[] getSelectors(Project aProject) 
+//                { return (FileSelector[]) selectors.toArray();
+//                }
+//
+//         @Override
+//         public boolean hasSelectors() 
+//                { return selectors.size() != 0;
+//                }
+//
+//         @Override
+//         public int selectorCount() 
+//                { return selectors.size();
+//                }
+//
+//         @SuppressWarnings({ "rawtypes" })
+//         @Override
+//         public Enumeration selectorElements() 
+//                { return Collections.enumeration(selectors);
+//                }
+       }

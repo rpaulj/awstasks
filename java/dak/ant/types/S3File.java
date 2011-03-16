@@ -22,8 +22,8 @@ import org.jets3t.service.model.S3Object;
  */
 @SuppressWarnings("serial")
 public class S3File extends File 
-       { private final String bucket;
-         private final String key;
+       { public  final String bucket;
+         public  final String key;
          private final int    hashcode;
          
          private long         lastModified;
@@ -61,6 +61,10 @@ public class S3File extends File
          @Override
          public long lastModified()
                 { return lastModified;
+                }
+         
+         public String getBucket()
+                { return bucket;
                 }
          
          public String getKey()

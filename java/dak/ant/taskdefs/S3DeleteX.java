@@ -1,8 +1,12 @@
 package dak.ant.taskdefs;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.tools.ant.BuildException;
 import org.jets3t.service.S3Service;
@@ -12,10 +16,7 @@ import org.jets3t.service.model.S3Object;
 import org.jets3t.service.security.AWSCredentials;
 
 import dak.ant.types.S3File;
-import dak.ant.types.S3FileSetY;
 import dak.ant.types.S3FileSetX;
-import dak.ant.types.S3ObjectWrapper;
-import dak.ant.util.S3BucketScanner;
 
 /** Ant task to delete S3 objects selected using an S3FileSet.
  * 
@@ -25,15 +26,15 @@ import dak.ant.util.S3BucketScanner;
 public class S3DeleteX extends AWSTask 
        { // INSTANCE VARIABLES
 
-         private String           bucket;
+         private boolean          dummyRun = false;
          private List<S3FileSetX> filesets = new ArrayList<S3FileSetX>  ();
 
          // PROPERTIES
 
-         public void setBucket(String bucket) 
-                { this.bucket = bucket;
+         public void setDummyRun(boolean enabled)
+                { this.dummyRun = enabled;
                 }
-
+         
          public S3FileSetX createS3FileSetX() 
                 { S3FileSetX fileset = new S3FileSetX();
 
@@ -51,35 +52,18 @@ public class S3DeleteX extends AWSTask
                   try 
                      { AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
                        S3Service      service     = new RestS3Service(credentials);
-                       List<S3Object> list        = new ArrayList<S3Object>();
+                       Set<S3File>    list        = new ConcurrentSkipListSet<S3File>();
 
-                       // ... match on object sets
+                       // ... match on filesets
 
                        for (S3FileSetX fileset: filesets)
-                           { Iterator<S3File> ix = fileset.iterator(credentials); 
+                           { Iterator<S3File> ix = fileset.iterator(service); 
                          
                              while (ix.hasNext()) 
-                                   { S3File   file   = ix.next();
-                                     String   key    = file.getName();
-                                     S3Object object = new S3Object(key);
-         
-                                     list.add(object);
+                                   { list.add(ix.next());
                                    }  
                            }
                        
-//                       // ... match on file sets
-//
-//                       for (S3FileSetY fileset: filesets) 
-//                           { S3BucketScanner   scanner = fileset.getBucketScanner(service);
-//                             S3Bucket          bucket  = new S3Bucket(scanner.getBucket());
-//                             S3ObjectWrapper[] objects = scanner.getIncludedObjects();
-//
-//                             for (S3ObjectWrapper object: objects) 
-//                                 { list.add(new S3Object(bucket, object.getKey()));
-//                                 }
-//                             
-//                           }
-
                        // ... delete objects in list
 
                        if (list.isEmpty())
@@ -87,11 +71,29 @@ public class S3DeleteX extends AWSTask
                           else
                           log("Deleting " + list.size() + " objects");
 
-                       for (S3Object object: list) 
-                           { //s3.deleteObject(object.getBucketName(), object.getKey());
+                       Map<String,S3Bucket> buckets = new HashMap<String,S3Bucket>();
+                       S3Bucket             bucket;
+                       S3Object             object;
+                       
+                       for (S3File file: list) 
+                           { if ((bucket = buckets.get(file.bucket)) == null)
+                                { bucket = new S3Bucket(file.bucket);
+                                
+                                  buckets.put(file.bucket,bucket);
+                                }
+                           
+                             object = new S3Object(bucket,file.key);
 
-                             if (verbose)
-                               log("Deleted '" + object.getBucketName() + "/" + object.getKey() + "'");
+                             if (dummyRun)
+                                { log("DUMMY RUN: deleted '[" + object.getBucketName() + "][" + object.getKey() + "'");
+                                
+                                }
+                                else
+                                { //s3.deleteObject(object.getBucketName(), object.getKey());
+
+                                  if (verbose)
+                                    log("Deleted '[" + object.getBucketName() + "][" + object.getKey() + "'");
+                                }
                            }
                      } 
                   catch (Exception x)
