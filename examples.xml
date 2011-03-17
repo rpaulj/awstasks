@@ -5,9 +5,11 @@
  <property name="awstasks.classes" value="${basedir}/build/classes"/>
  <property name="awstasks.lib"     value="${basedir}/lib"/>
 	 
- <property name="examples.credentials" value="aws.properties"     />
- <property name="examples.bucket"      value="awstasks-test"      />
+ <property name="examples.credentials" value="../../dist/aws.properties"     />
+ <property name="examples.bucket"      value="provantage-development"      />
  <property name="examples.dir"         value="${basedir}/runtime" />
+
+ <property file="${examples.credentials}" />
 
  <path id="classpath.compile" >
   <fileset dir="${awstasks.lib}" />
@@ -29,7 +31,19 @@
  <taskdef name="s3-delete" classname="dak.ant.taskdefs.S3Delete">
   <classpath refid="classpath.compile"/>
  </taskdef>
+	
+ <taskdef name="s3-list" classname="dak.ant.taskdefs.S3List">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
 
+ <typedef name="S3Fileset" classname="dak.ant.types.S3FileSetX">
+  <classpath refid="classpath.compile"/>
+ </typedef>
+
+ <typedef name="S3File" classname="dak.ant.types.S3File">
+  <classpath refid="classpath.compile"/>
+ </typedef>
+	
  <typedef name="objectset" classname="dak.ant.types.S3ObjectSet">
   <classpath refid="classpath.compile"/>
  </typedef>
@@ -47,18 +61,24 @@
   <object key="development.conf" />
  </objectset>
 	
- <!-- DELETE -->
-
- <target name="delete-regex">
-  <property file="${examples.credentials}" />
-  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="${examples.bucket}" prefix="" fileregex="test.*" />
+ <!-- LIST -->
+		
+ <target name="list-fileset-date">
+  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" outfile="${examples.dir}/list.txt" format="[%s][%s]" append="false">
+   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
+   </s3fileset>
+  </s3-list>
  </target>
 
- <target name="delete-objectset">
-  <property file="${examples.credentials}" />
-  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" prefix="" >
-   <objectset bucket="${examples.bucket}" includes="**/*.bak" />
-  </s3-delete>
+ <!-- NOTE: the regex attribute for a filename selector requires Ant 1.8 -->
+	
+ <target name="list-fileset-regex">
+  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <filename regex="org" />
+   </s3fileset>
+  </s3-list>
  </target>
 	
  <!-- UPLOAD -->
@@ -162,5 +182,19 @@
    <fileset dir="${examples.dir}/synchronize" includes="**/*" excludes="**/.DSStore" />
   </s3-synchronize>
  </target>
+
+ <!-- DELETE -->
+
+ <target name="delete-regex">
+  <property file="${examples.credentials}" />
+  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="${examples.bucket}" prefix="" fileregex="test.*" />
+ </target>
+
+ <target name="delete-objectset">
+  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" prefix="" >
+   <objectset bucket="${examples.bucket}" includes="**/*.bak" />
+  </s3-delete>
+ </target>
+		
 	
 </project>

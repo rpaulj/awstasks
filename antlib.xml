@@ -7,9 +7,12 @@
  <taskdef name="download"    classname="dak.ant.taskdefs.S3Download"    />
  <taskdef name="synchronize" classname="dak.ant.taskdefs.S3Synchronize" />
  <taskdef name="delete"      classname="dak.ant.taskdefs.S3Delete"      />
+ <taskdef name="list"        classname="dak.ant.taskdefs.S3List"        />
  
  <!-- TYPES -->
 
+ <typedef name="fileset"   classname="dak.ant.types.S3FileSet"       />
+ <typedef name="files"     classname="dak.ant.types.S3File"          />
  <typedef name="objectset" classname="dak.ant.types.S3ObjectSet"     />
  <typedef name="object"    classname="dak.ant.types.S3ObjectWrapper" />
  
