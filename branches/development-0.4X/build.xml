@@ -18,15 +18,15 @@
   <pathelement location="${awstasks.classes}" />
  </path>
 
- <taskdef name="s3-deletex" classname="dak.ant.taskdefs.S3DeleteX">
+ <taskdef name="s3-list" classname="dak.ant.taskdefs.S3List">
   <classpath refid="classpath.compile"/>
  </taskdef>
 
- <typedef name="s3filesetx" classname="dak.ant.types.S3FileSetX">
+ <taskdef name="s3-delete" classname="dak.ant.taskdefs.S3DeleteX">
   <classpath refid="classpath.compile"/>
- </typedef>
+ </taskdef>
 
- <typedef name="s3objectsetx" classname="dak.ant.types.S3ObjectSetX">
+ <typedef name="s3fileset" classname="dak.ant.types.S3FileSetX">
   <classpath refid="classpath.compile"/>
  </typedef>
 
@@ -83,24 +83,24 @@
 
  <!-- TEST STUFF -->
 	
- <target name="delete-fileset-date" depends="compile">
+ <target name="list-fileset-date" depends="compile">
   <property file="../../dist/aws.properties" />
-  <s3-deletex accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" dummyRun="true">
-   <s3filesetx bucket="provantage-development" includes="**/*.jar" >
+  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" outfile="./runtime/list.txt" format="[%s][%s]" append="false">
+   <s3fileset bucket="provantage-development" includes="**/*.jar" >
    	<date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
-   </s3filesetx>
-  </s3-deletex>
+   </s3fileset>
+  </s3-list>
  </target>
 
  <!-- REQUIRES Ant 1.8 -->
 	
- <target name="delete-fileset-regex" depends="compile">
+ <target name="list-fileset-regex" depends="compile">
   <property file="../../dist/aws.properties" />
-  <s3-deletex accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" dummyRun="true">
-   <s3filesetx bucket="provantage-development" includes="**/*.jar" >
+  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3fileset bucket="provantage-development" includes="**/*.jar" >
    	<filename regex="org" />
-   </s3filesetx>
-  </s3-deletex>
+   </s3fileset>
+  </s3-list>
  </target>
 
 </project>
