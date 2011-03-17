@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.tools.ant.BuildException;
 import org.jets3t.service.S3Service;
+import org.jets3t.service.ServiceException;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
 import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.S3Object;
@@ -114,6 +115,12 @@ public class S3List extends AWSTask
                                 }
                            }
                      } 
+                  catch(BuildException x)
+                     { throw x;
+                     }
+                  catch(ServiceException x)
+                     { throw new BuildException(x.getErrorMessage());
+                     }
                   catch (Exception x)
                      { throw new BuildException(x);
                      }

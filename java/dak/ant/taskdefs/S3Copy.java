@@ -1,160 +1,117 @@
 package dak.ant.taskdefs;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.types.LogLevel;
 import org.jets3t.service.S3Service;
 import org.jets3t.service.ServiceException;
 import org.jets3t.service.impl.rest.httpclient.RestS3Service;
+import org.jets3t.service.model.S3Bucket;
 import org.jets3t.service.model.S3Object;
 import org.jets3t.service.security.AWSCredentials;
 
-import dak.ant.types.S3FileSet;
+import dak.ant.types.S3File;
+import dak.ant.types.S3FileSetX;
 
-/**
- * N.B. Only bucket to bucket copy as this is all i need, but 
- * It should be extendible if/when required. 
- * @author chris
- *
- */
-public class S3Copy extends AWSTask {
-    
-    // INSTANCE VARIABLES
-    
-    private String          toBucket;
-    private String          fromBucket;
-    private String          prefix;
-    private Pattern         filePattern;
-    private List<S3FileSet> fileSets = new ArrayList<S3FileSet>();
+/** Ant task do do bucket to bucket copy.
+  *  
+  * @author Chris Stewart
+  *
+  */
 
-    // PROPERTIES
-    
-    public void setToBucket(String bucket) {
-        this.toBucket = bucket;
-    }
-    
-    public void setFromBucket(String bucket) {
-        this.fromBucket = bucket;
-    }
-    
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
-    }
-    
-    public void setFileRegex(String regex) {
-       this.filePattern = Pattern.compile(regex);
-    }
+// TS: Removed non-fileset copy - no longer required since FileName selector supports regular expressions 
+//     as of Ant 1.8 and S3FileSet now supports include/exclude patterns.
+//     
+// TS: Added automatic bucket creation.
 
-    public void addS3FileSet(S3FileSet set) {
-        fileSets.add( set );
-    }
+public class S3Copy extends AWSTask 
+       { // INSTANCE VARIABLES
     
-    protected boolean isFileSetMode() {
-       return fileSets.size( ) > 0;
-    }
+         private String           bucket;
+         private List<S3FileSetX> filesets = new ArrayList<S3FileSetX>();
 
+         // PROPERTIES
 
-    // IMPLEMENTATION
+         public void setBucket(String bucket)  
+                { this.bucket = bucket;
+                }
 
-    @Override
-    public void execute() throws BuildException {
-        checkParameters();
-        try {
-           if( isFileSetMode( ) )
-              for ( S3FileSet fileSet : fileSets ) {
-                 doFileSetCopy( fileSet );               
-              }
-           else   
-             doNonFileSetCopy( );
-        }
-        catch (Exception e) {
-            throw new BuildException(e);
-        }
-    }
+         public S3FileSetX createS3FileSet() 
+                { S3FileSetX fileset = new S3FileSetX();
 
-   @SuppressWarnings("unchecked")
-   private void doFileSetCopy( S3FileSet fileSet ) throws ServiceException {
-      
-      AWSCredentials credentials = fileSet.getCredentials( );
-      S3Service s3 = new RestS3Service(credentials);
-       
-      for ( Iterator<File> i = fileSet.iterator( ); i.hasNext( ); ) {
-         File file = i.next( );
-         
-         String key = file.getName( );
-         
-         S3Object object = new S3Object( key );
-         
-         s3.copyObject( fileSet.getBucket( ), key, toBucket, object, true );
-         
-         if (verbose)
-            log("copied " + object.getKey());
-      }  
-   }
+                  filesets.add(fileset);
 
-   private void doNonFileSetCopy( ) throws ServiceException {
-      
-      AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
-      S3Service s3 = new RestS3Service(credentials);
-      
-      S3Object[] objectListing;
-      if (prefix != null)
-          objectListing = s3.listObjects(this.fromBucket, prefix, null);
-      else
-          objectListing = s3.listObjects(this.fromBucket);
-      for (S3Object object : objectListing) {
-          if (objectMatches(object)) {
-             s3.copyObject( this.fromBucket, object.getKey( ), toBucket, object, true );
-              if (verbose)
-                  log("copied " + object.getKey());
-          }
-      }
-   }
-    
-    protected void checkParameters() throws BuildException {
-           
-       if( toBucket == null ) {
-          throw new BuildException("toBucket must be set");
+                  return fileset;
+                }
+
+         // IMPLEMENTATION
+
+         @Override
+         public void execute() throws BuildException 
+                { checkParameters();
+             
+                  try
+                     { AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
+                       S3Service      service     = new RestS3Service(credentials);
+                       Set<S3File>    list        = new ConcurrentSkipListSet<S3File>();
+
+                       // ... match on filesets
+
+                       for (S3FileSetX fileset: filesets)
+                           { Iterator<S3File> ix = fileset.iterator(service); 
+                         
+                             while (ix.hasNext()) 
+                                   { list.add(ix.next());
+                                   }  
+                           }
+
+                       if (list.isEmpty())
+                          { log("Copy list is empty - nothing to do.");
+                            return;
+                          }
+                       
+                       // ... create bucket
+                       
+                      if (service.getBucket(bucket) == null) 
+                         { log("Bucket '" + bucket + "' does not exist ! Creating ...",LogLevel.WARN.getLevel());
+                           service.createBucket(new S3Bucket(bucket));
+                         }
+
+                       // ... copy objects in list
+
+                       log("Copying " + list.size() + " objects");
+
+                       for (S3File file: list) 
+                           { S3Object object = new S3Object(file.key);
+
+                             service.copyObject(file.bucket,file.key,bucket,object,true);
+                
+                             if (verbose)
+                                log("Copied '" + file.bucket + "::" + file.key + "' to '" + bucket + "::" + object.getKey() + "'");
+                           }
+                     }
+                  catch(BuildException x)
+                     { throw x;
+                     }
+                  catch(ServiceException x)
+                     { throw new BuildException(x.getErrorMessage());
+                     }
+                  catch (Exception x) 
+                     { throw new BuildException(x);
+                     }
+                }
+
+         @Override
+         protected void checkParameters() throws BuildException 
+                   { super.checkParameters();
+                 
+                     if (bucket == null)
+                        { throw new BuildException("'bucket' task attribute must be set");
+                        }
+                   }
        }
-      
-       if( !isFileSetMode() ) {
-          super.checkParameters( );
-          
-          if( fromBucket == null ) {
-             throw new BuildException("fromBucket must be set");
-          }
-          
-          return;
-       }
-       // S3FileSet(s) given
-       // S3FileSet contains all of these
-       if( accessId != null ) {
-          throw new BuildException("cannot set s3FileSet and accessId");
-       }
-       if( secretKey != null ) {
-          throw new BuildException("cannot set s3FileSet and secretKey");
-       }
-       if( fromBucket != null ) {
-          throw new BuildException("cannot set s3FileSet and bucket");
-       }
-       if( prefix != null ) {
-          throw new BuildException("cannot set s3FileSet and prefix");
-       }
-       if( filePattern != null ) {
-          throw new BuildException("cannot set s3FileSet and filePattern");
-       }
-   }
-    
-    private boolean objectMatches(S3Object object) {
-        String toCompare = prefix == null ? 
-                object.getKey() : object.getKey().substring(prefix.length());
-        if (filePattern == null)
-            return true;
-        else
-            return filePattern.matcher(toCompare).matches();
-    }
-}
