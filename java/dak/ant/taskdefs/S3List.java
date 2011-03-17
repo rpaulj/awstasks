@@ -1,5 +1,8 @@
 package dak.ant.taskdefs;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -18,24 +21,35 @@ import org.jets3t.service.security.AWSCredentials;
 import dak.ant.types.S3File;
 import dak.ant.types.S3FileSetX;
 
-/** Ant task to delete S3 objects selected using an S3FileSet.
- * 
- * @author Tony Seebregts
- *
- */
-public class S3DeleteX extends AWSTask 
+/** Ant task to list the S3 objects selected using nested S3FileSet's. Mostly implemented
+  * to test the various selectors but may find other uses.
+  * 
+  * @author Tony Seebregts
+  *
+  */
+public class S3List extends AWSTask 
        { // INSTANCE VARIABLES
 
-         private boolean          dummyRun = false;
+         private String           format = "%s::%s";   
+         private boolean          append = false;
+         private String           outfile;
          private List<S3FileSetX> filesets = new ArrayList<S3FileSetX>  ();
 
          // PROPERTIES
 
-         public void setDummyRun(boolean enabled)
-                { this.dummyRun = enabled;
+         public void setOutFile(String outfile) 
+                { this.outfile = outfile;
                 }
-         
-         public S3FileSetX createS3FileSetX() 
+
+         public void setFormat(String format) 
+                { this.format = format;
+                }
+
+         public void setAppend(boolean append) 
+                { this.append = append;
+                }
+
+         public S3FileSetX createS3FileSet() 
                 { S3FileSetX fileset = new S3FileSetX();
 
                   filesets.add(fileset);
@@ -48,6 +62,8 @@ public class S3DeleteX extends AWSTask
          @Override
          public void execute() throws BuildException 
                 { checkParameters();
+
+                  PrintWriter writer = null;
 
                   try 
                      { AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
@@ -64,18 +80,18 @@ public class S3DeleteX extends AWSTask
                                    }  
                            }
 
-                       if (list.isEmpty())
-                          { log("Delete list is empty - nothing to do.");
-                            return;
-                          }
+                       // ... open output file
                        
-                       // ... delete objects in list
+                       if (outfile != null)
+                          writer = new PrintWriter(new FileWriter(new File(outfile),append));
+                       
+                       // ... print objects in list
 
                        Map<String,S3Bucket> buckets = new HashMap<String,S3Bucket>();
                        S3Bucket             bucket;
                        S3Object             object;
 
-                       log("Deleting " + list.size() + " objects");
+                       log("Listing " + list.size() + " objects");
 
                        for (S3File file: list) 
                            { // ... re-use buckets just in case they ever become heavyweight objects
@@ -90,19 +106,19 @@ public class S3DeleteX extends AWSTask
                              
                              object = new S3Object(bucket,file.key);
 
-                             if (dummyRun)
-                                { log("DUMMY RUN: deleted '[" + object.getBucketName() + "][" + object.getKey() + "'");
-                                }
-                                else
-                                { //s3.deleteObject(object.getBucketName(), object.getKey());
-
-                                  if (verbose)
-                                     log("Deleted '[" + object.getBucketName() + "][" + object.getKey() + "'");
+                             if ((outfile == null) || verbose)
+                                log(String.format(format,object.getBucketName(),object.getKey()));
+                               
+                             if (writer != null)
+                                { writer.println(String.format(format,object.getBucketName(),object.getKey()));
                                 }
                            }
                      } 
                   catch (Exception x)
                      { throw new BuildException(x);
+                     }
+                  finally
+                     { close(writer);
                      }
                 }
 
