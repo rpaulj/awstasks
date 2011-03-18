@@ -18,7 +18,7 @@ import org.jets3t.service.security.AWSCredentials;
 import dak.ant.types.S3File;
 import dak.ant.types.S3FileSetX;
 
-/** Ant task do do bucket to bucket copy.
+/** Ant task do do bucket-to-bucket copy.
   *  
   * @author Chris Stewart
   *

@@ -18,6 +18,10 @@
   <pathelement location="${awstasks.classes}" />
  </path>
 
+ <taskdef name="s3-list" classname="dak.ant.taskdefs.S3List">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
+
  <taskdef name="s3-copy" classname="dak.ant.taskdefs.S3Copy">
   <classpath refid="classpath.compile"/>
  </taskdef>
@@ -30,6 +34,10 @@
   <classpath refid="classpath.compile"/>
  </typedef>
 
+ <typedef name="key" classname="dak.ant.selectors.S3KeySelector">
+  <classpath refid="classpath.compile"/>
+ </typedef>
+	
  <!-- BUILD -->
 	
  <target name="init">
@@ -82,6 +90,15 @@
  </target>
 
  <!-- TEST STUFF -->
+	
+ <target name="list-fileset-regex">
+  <property file="../../dist/aws.properties" />
+  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3fileset bucket="provantage-development" includes="**/*.jar">
+    <key regex="ORG" casesensitive="true" />
+   </s3fileset>
+  </s3-list>
+ </target>
 	
  <target name="copy-fileset" depends="compile">
   <property file="../../dist/aws.properties" />
