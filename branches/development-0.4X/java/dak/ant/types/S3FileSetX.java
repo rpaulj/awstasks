@@ -19,6 +19,8 @@ import org.apache.tools.ant.types.selectors.SelectorUtils;
 import org.jets3t.service.S3Service;
 import org.jets3t.service.model.S3Object;
 
+import dak.ant.selectors.S3KeySelector;
+
 public class S3FileSetX extends DataType implements ResourceCollection 
        { // INSTANCE VARIABLES
     
@@ -112,6 +114,10 @@ public class S3FileSetX extends DataType implements ResourceCollection
          // TESTED SELECTORS
 
          public void addFilename(FilenameSelector selector) 
+                { appendSelector(selector);
+                }
+
+         public void addKey(S3KeySelector selector) 
                 { appendSelector(selector);
                 }
 

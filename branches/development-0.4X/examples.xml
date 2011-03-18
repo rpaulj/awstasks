@@ -43,7 +43,11 @@
  <typedef name="S3File" classname="dak.ant.types.S3File">
   <classpath refid="classpath.compile"/>
  </typedef>
-	
+
+ <typedef name="key" classname="dak.ant.selectors.S3KeySelector">
+  <classpath refid="classpath.compile"/>
+ </typedef>
+			
  <typedef name="objectset" classname="dak.ant.types.S3ObjectSet">
   <classpath refid="classpath.compile"/>
  </typedef>
@@ -72,8 +76,16 @@
  </target>
 
  <!-- NOTE: the regex attribute for a filename selector requires Ant 1.8 -->
+
+ <target name="list-fileset-regex-1.7">
+  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <key regex="org"  caseSensitive="true" />
+   </s3fileset>
+  </s3-list>
+ </target>
 	
- <target name="list-fileset-regex">
+ <target name="list-fileset-regex-1.8">
   <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
    <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
     <filename regex="org" />
