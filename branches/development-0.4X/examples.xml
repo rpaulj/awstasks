@@ -5,9 +5,10 @@
  <property name="awstasks.classes" value="${basedir}/build/classes"/>
  <property name="awstasks.lib"     value="${basedir}/lib"/>
 	 
- <property name="examples.credentials" value="../../dist/aws.properties"     />
- <property name="examples.bucket"      value="provantage-development"      />
- <property name="examples.dir"         value="${basedir}/runtime" />
+ <property name="examples.credentials" value="../../dist/aws.properties" />
+ <property name="examples.bucket"      value="provantage-development"    />
+ <property name="examples.bucket.2"    value="awstasks-ts"               />
+ <property name="examples.dir"         value="${basedir}/runtime"        />
 
  <property file="${examples.credentials}" />
 
@@ -15,6 +16,14 @@
   <fileset dir="${awstasks.lib}" />
   <pathelement location="${awstasks.classes}" />
  </path>
+
+ <taskdef name="s3-list" classname="dak.ant.taskdefs.S3List">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
+
+ <taskdef name="s3-copy" classname="dak.ant.taskdefs.S3Copy">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
 
  <taskdef name="s3-upload" classname="dak.ant.taskdefs.S3Upload">
   <classpath refid="classpath.compile"/>
@@ -32,10 +41,6 @@
   <classpath refid="classpath.compile"/>
  </taskdef>
 	
- <taskdef name="s3-list" classname="dak.ant.taskdefs.S3List">
-  <classpath refid="classpath.compile"/>
- </taskdef>
-
  <typedef name="S3Fileset" classname="dak.ant.types.S3FileSetX">
   <classpath refid="classpath.compile"/>
  </typedef>
@@ -75,8 +80,6 @@
   </s3-list>
  </target>
 
- <!-- NOTE: the regex attribute for a filename selector requires Ant 1.8 -->
-
  <target name="list-fileset-regex-1.7">
   <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
    <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
@@ -86,17 +89,67 @@
  </target>
 	
  <target name="list-fileset-regex-1.8">
+  <fail message="A filename selector with regex attribute requires Ant 1.8 or higher">
+   <condition>
+ 	<not>
+ 	 <contains string="${ant.version}" substring="1.8"/>
+ 	</not>
+   </condition>
+  </fail>
+
   <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
    <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
     <filename regex="org" />
    </s3fileset>
   </s3-list>
+ 	
+ </target>
+	
+ <!-- COPY -->
+	
+ <target name="copy-fileset">
+  <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" verbose="true">
+   <s3fileset bucket="provantage-development" includes="**/*.jar" >
+    <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
+   </s3fileset>
+  </s3-copy>
+ </target>
+
+ <target name="copy-fileset-date">
+  <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" dummyRun="true" verbose="true">
+   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
+   </s3fileset>
+  </s3-copy>
+ </target>
+
+ <target name="copy-fileset-regex-1.7">
+  <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" dummyRun="true" verbose="true">
+   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <key regex="org" />
+   </s3fileset>
+  </s3-copy>
+ </target>
+
+ <target name="copy-fileset-regex-1.8">
+  <fail message="A filename selector with regex attribute requires Ant 1.8 or higher">
+   <condition>
+ 	<not>
+ 	 <contains string="${ant.version}" substring="1.8"/>
+ 	</not>
+   </condition>
+  </fail>
+
+ <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" dummyRun="true" verbose="true">
+   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <filename regex="org" />
+   </s3fileset>
+  </s3-copy>
  </target>
 	
  <!-- UPLOAD -->
 
  <target name="upload-new-or-changed">
-  <property file="${examples.credentials}" />
   <s3-upload verbose="true" 
   	         accessId="${aws.accessId}" 
   	         secretKey="${aws.secretKey}"
@@ -109,7 +162,6 @@
  <!-- DOWNLOAD -->
 
  <target name="download-all">
-  <property file="${examples.credentials}" />
   <s3-download verbose="true"
 	           accessId="${aws.accessId}"
                secretKey="${aws.secretKey}"
@@ -120,7 +172,6 @@
  </target>
 		
  <target name="download-includes">
-  <property file="${examples.credentials}" />
   <s3-download verbose="true"
                accessId="${aws.accessId}"
                secretKey="${aws.secretKey}"
@@ -131,7 +182,6 @@
  </target>
 
  <target name="download-excludes">
-  <property file="${examples.credentials}" />
   <s3-download verbose="true"
   	           accessId="${aws.accessId}"
 	           secretKey="${aws.secretKey}"
@@ -142,7 +192,6 @@
  </target>
 
  <target name="download-list">
-  <property file="${examples.credentials}" />
   <s3-download verbose="true"
 	  	       accessId="${aws.accessId}"
 		       secretKey="${aws.secretKey}"
@@ -154,7 +203,6 @@
  </target>
 	
  <target name="download-refid">
-  <property file="${examples.credentials}" />
   <s3-download verbose="true"
 	  	       accessId="${aws.accessId}"
   	           secretKey="${aws.secretKey}"
@@ -166,7 +214,6 @@
  <!-- SYNCHRONIZE -->
 
  <target name="synchronize-upload">
-  <property file="${examples.credentials}" />
   <s3-synchronize accessId="${aws.accessId}" 
   	              secretKey="${aws.secretKey}" 
   	              bucket="${examples.bucket}"
@@ -181,7 +228,6 @@
  </target>
 
  <target name="synchronize-download">
-  <property file="${examples.credentials}" />
   <s3-synchronize accessId="${aws.accessId}" 
   	              secretKey="${aws.secretKey}" 
   	              bucket="${examples.bucket}"
@@ -197,16 +243,19 @@
 
  <!-- DELETE -->
 
- <target name="delete-regex">
-  <property file="${examples.credentials}" />
-  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="${examples.bucket}" prefix="" fileregex="test.*" />
- </target>
-
- <target name="delete-objectset">
+ <target name="delete-fileset">
   <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" prefix="" >
-   <objectset bucket="${examples.bucket}" includes="**/*.bak" />
+   <s3fileset bucket="${examples.bucket}" includes="**/*.bak" />
   </s3-delete>
  </target>
 		
+ <target name="delete-regex">
+  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="${examples.bucket}" prefix="" fileregex="test.*">
+   <s3fileset bucket="provantage-development" includes="**/*.jar">
+    <key regex="test.*" casesensitive="true" />
+   </s3fileset> 	
+  </s3-delete>
+ </target>
+
 	
 </project>

@@ -11,28 +11,91 @@
  <property name="examples.bucket"      value="awstasks-test"      />
  <property name="examples.dir"         value="${basedir}/runtime" />
 
+ <property file="${examples.credentials}" />
+
  <s3:objectset bucket="${examples.bucket}" id="configuration-files">
   <s3:object key="awstasks.config" />
  </s3:objectset>
 	
- <!-- DELETE -->
-
- <target name="delete-regex">
-  <property file="${examples.credentials}" />
-  <s3:delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="${examples.bucket}" prefix="" fileregex="test.*" />
+ <!-- LIST -->
+			
+ <target name="list-fileset-date">
+  <s3:list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" outfile="${examples.dir}/list.txt" format="[%s][%s]" append="false">
+   <s3:fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
+   </s3:fileset>
+  </s3:list>
  </target>
 
- <target name="delete-objectset">
-  <property file="${examples.credentials}" />
-  <s3:delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" prefix="" >
-   <s3:objectset bucket="${examples.bucket}" includes="**/*.bak" />
-  </s3:delete>
+ <target name="list-fileset-regex-1.7">
+  <s3:list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3:fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <key regex="org"  caseSensitive="true" />
+   </s3:fileset>
+  </s3:list>
  </target>
+		
+ <target name="list-fileset-regex-1.8">
+  <fail message="A filename selector with regex attribute requires Ant 1.8 or higher">
+   <condition>
+ 	<not>
+ 	 <contains string="${ant.version}" substring="1.8"/>
+ 	</not>
+   </condition>
+  </fail>
+ 	
+  <s3:list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3:fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <filename regex="org" />
+   </s3:fileset>
+  </s3:list>
+ </target>
+		
+ <!-- COPY -->
+		
+ <target name="copy-fileset">
+  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" verbose="true">
+   <s3:fileset bucket="provantage-development" includes="**/*.jar" >
+    <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
+   </s3:fileset>
+  </s3:copy>
+ </target>
+
+ <target name="copy-fileset-date">
+  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" dummyRun="true" verbose="true">
+   <s3:fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
+   </s3:fileset>
+  </s3:copy>
+ </target>
+
+ <target name="copy-fileset-regex-1.7">
+  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" dummyRun="true" verbose="true">
+   <s3:fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <key regex="org" />
+   </s3:fileset>
+  </s3:copy>
+ </target>
+
+ <target name="copy-fileset-regex-1.8">
+  <fail message="A filename selector with regex attribute requires Ant 1.8 or higher">
+   <condition>
+ 	<not>
+ 	 <contains string="${ant.version}" substring="1.8"/>
+ 	</not>
+   </condition>
+  </fail>
+ 	
+  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" dummyRun="true" verbose="true">
+   <s3:fileset bucket="${examples.bucket}" includes="**/*.jar" >
+    <filename regex="org" />
+   </s3:fileset>
+  </s3:copy>
+ </target>	
 	
  <!-- UPLOAD -->
 
  <target name="upload-new-or-changed">
-  <property file="${examples.credentials}" />
   <s3:upload verbose="true" 
   	         accessId="${aws.accessId}" 
   	         secretKey="${aws.secretKey}"
@@ -45,7 +108,6 @@
  <!-- DOWNLOAD -->
 
  <target name="download-all">
-  <property file="${examples.credentials}" />
   <s3:download verbose="true"
 	           accessId="${aws.accessId}"
                secretKey="${aws.secretKey}"
@@ -56,7 +118,6 @@
  </target>
 		
  <target name="download-includes">
-  <property file="${examples.credentials}" />
   <s3:download verbose="true"
                accessId="${aws.accessId}"
                secretKey="${aws.secretKey}"
@@ -67,7 +128,6 @@
  </target>
 
  <target name="download-excludes">
-  <property file="${examples.credentials}" />
   <s3:download verbose="true"
   	           accessId="${aws.accessId}"
 	           secretKey="${aws.secretKey}"
@@ -78,7 +138,6 @@
  </target>
 
  <target name="download-list">
-  <property file="${examples.credentials}" />
   <s3:download verbose="true"
 	  	       accessId="${aws.accessId}"
 		       secretKey="${aws.secretKey}"
@@ -90,7 +149,6 @@
  </target>
 	
  <target name="download-refid">
-  <property file="${examples.credentials}" />
   <s3:download verbose="true"
 	  	       accessId="${aws.accessId}"
   	           secretKey="${aws.secretKey}"
@@ -102,7 +160,6 @@
  <!-- SYNCHRONIZE -->
 
  <target name="synchronize-upload">
-  <property file="${examples.credentials}" />
   <s3:synchronize accessId="${aws.accessId}" 
   	              secretKey="${aws.secretKey}" 
   	              bucket="${examples.bucket}"
@@ -117,7 +174,6 @@
  </target>
 
  <target name="synchronize-download">
-  <property file="${examples.credentials}" />
   <s3:synchronize accessId="${aws.accessId}" 
   	              secretKey="${aws.secretKey}" 
   	              bucket="${examples.bucket}"
@@ -131,4 +187,20 @@
   </s3:synchronize>
  </target>
 	
+ <!-- DELETE -->
+
+ <target name="delete-fileset">
+  <s3:delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" prefix="" >
+   <s3:fileset bucket="${examples.bucket}" includes="**/*.bak" />
+  </s3:delete>
+ </target>
+			
+ <target name="delete-regex">
+  <s3:delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="${examples.bucket}" prefix="" fileregex="test.*">
+   <s3:fileset bucket="provantage-development" includes="**/*.jar">
+    <key regex="test.*" casesensitive="true" />
+   </s3:fileset> 	
+  </s3:delete>
+ </target>
+	 	
 </project>
