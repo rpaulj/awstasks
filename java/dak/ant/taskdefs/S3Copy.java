@@ -34,6 +34,7 @@ public class S3Copy extends AWSTask
     
          private String           bucket;
          private List<S3FileSetX> filesets = new ArrayList<S3FileSetX>();
+         private boolean          dummyRun = false;
 
          // PROPERTIES
 
@@ -47,6 +48,10 @@ public class S3Copy extends AWSTask
                   filesets.add(fileset);
 
                   return fileset;
+                }
+         
+         public void setDummyRun(boolean enabled)
+                { this.dummyRun = enabled;
                 }
 
          // IMPLEMENTATION
@@ -89,10 +94,15 @@ public class S3Copy extends AWSTask
                        for (S3File file: list) 
                            { S3Object object = new S3Object(file.key);
 
-                             service.copyObject(file.bucket,file.key,bucket,object,true);
-                
-                             if (verbose)
-                                log("Copied '" + file.bucket + "::" + file.key + "' to '" + bucket + "::" + object.getKey() + "'");
+                             if (dummyRun)
+                                { log("DUMMY RUN: copied '" + file.bucket + "::" + file.key + "' to '" + bucket + "::" + object.getKey() + "'");
+                                }
+                                else
+                                { service.copyObject(file.bucket,file.key,bucket,object,true);
+                                    
+                                  if (verbose)
+                                    log("Copied '" + file.bucket + "::" + file.key + "' to '" + bucket + "::" + object.getKey() + "'");
+                                }
                            }
                      }
                   catch(BuildException x)
