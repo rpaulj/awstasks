@@ -91,15 +91,6 @@
 
  <!-- TEST STUFF -->
 	
- <target name="list-fileset-regex">
-  <property file="../../dist/aws.properties" />
-  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
-   <s3fileset bucket="provantage-development" includes="**/*.jar">
-    <key regex="ORG" casesensitive="true" />
-   </s3fileset>
-  </s3-list>
- </target>
-	
  <target name="copy-fileset" depends="compile">
   <property file="../../dist/aws.properties" />
   <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="awstasks-ts" verbose="true">
@@ -111,7 +102,7 @@
 
  <target name="copy-fileset-date" depends="compile">
   <property file="../../dist/aws.properties" />
-   <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" outfile="./runtime/list.txt" format="[%s][%s]" append="false">
+   <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="awstasks-ts" dummyRun="true">
     <s3fileset bucket="provantage-development" includes="**/*.jar" >
      <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
 	</s3fileset>
@@ -120,9 +111,9 @@
 	
  <target name="copy-fileset-regex" depends="compile">
   <property file="../../dist/aws.properties" />
-  <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+  <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="awstasks-ts" dummyRun="true">
    <s3fileset bucket="provantage-development" includes="**/*.jar" >
-   	<filename regex="org" />
+   	<key regex="org" />
    </s3fileset>
   </s3-copy>
  </target>

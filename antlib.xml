@@ -3,11 +3,12 @@
   
  <!-- TASKS -->
  
+ <taskdef name="list"        classname="dak.ant.taskdefs.S3List"        />
+ <taskdef name="copy"        classname="dak.ant.taskdefs.S3Copy"        />
  <taskdef name="upload"      classname="dak.ant.taskdefs.S3Upload"      />
  <taskdef name="download"    classname="dak.ant.taskdefs.S3Download"    />
  <taskdef name="synchronize" classname="dak.ant.taskdefs.S3Synchronize" />
  <taskdef name="delete"      classname="dak.ant.taskdefs.S3Delete"      />
- <taskdef name="list"        classname="dak.ant.taskdefs.S3List"        />
  
  <!-- TYPES -->
 
