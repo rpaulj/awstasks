@@ -261,7 +261,7 @@ public class S3FileSetX extends DataType implements ResourceCollection
                             list = service.listObjects(bucket);
 
                          for (S3Object object: list) 
-                             { String  key      = object.getKey();
+                             { String  key      = "./" + object.getKey();   // "./" is required to wildcard match objects in the root of the bucket.
                                boolean selected = false;
                                boolean include  = false;
                                boolean exclude  = false;

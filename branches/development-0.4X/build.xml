@@ -26,7 +26,7 @@
   <classpath refid="classpath.compile"/>
  </taskdef>
 
- <taskdef name="s3-delete" classname="dak.ant.taskdefs.S3DeleteX">
+ <taskdef name="s3-delete" classname="dak.ant.taskdefs.S3Delete">
   <classpath refid="classpath.compile"/>
  </taskdef>
 
@@ -91,31 +91,11 @@
 
  <!-- TEST STUFF -->
 	
- <target name="copy-fileset" depends="compile">
+ <target name="delete-fileset">
   <property file="../../dist/aws.properties" />
-  <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="awstasks-ts" verbose="true">
-   <s3fileset bucket="provantage-development" includes="**/*.jar" >
-   	<date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
-   </s3fileset>
-  </s3-copy>
- </target>
-
- <target name="copy-fileset-date" depends="compile">
-  <property file="../../dist/aws.properties" />
-   <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="awstasks-ts" dummyRun="true">
-    <s3fileset bucket="provantage-development" includes="**/*.jar" >
-     <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
-	</s3fileset>
-    </s3-copy>
-   </target>
-	
- <target name="copy-fileset-regex" depends="compile">
-  <property file="../../dist/aws.properties" />
-  <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="awstasks-ts" dummyRun="true">
-   <s3fileset bucket="provantage-development" includes="**/*.jar" >
-   	<key regex="org" />
-   </s3fileset>
-  </s3-copy>
+  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" dummyRun="true" verbose="true">
+   <s3fileset bucket="provantage-development" includes="**/*.ecf" />
+  </s3-delete>
  </target>
 
 </project>
