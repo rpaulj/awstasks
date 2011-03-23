@@ -190,15 +190,15 @@
  <!-- DELETE -->
 
  <target name="delete-fileset">
-  <s3:delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" prefix="" >
+  <s3:delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
    <s3:fileset bucket="${examples.bucket}" includes="**/*.bak" />
   </s3:delete>
  </target>
 			
  <target name="delete-regex">
-  <s3:delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" bucket="${examples.bucket}" prefix="" fileregex="test.*">
+  <s3:delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" dummyRun="true" verbose="true">
    <s3:fileset bucket="provantage-development" includes="**/*.jar">
-    <key regex="test.*" casesensitive="true" />
+    <key regex="org" casesensitive="true" />
    </s3:fileset> 	
   </s3:delete>
  </target>
