@@ -16,7 +16,7 @@ import org.jets3t.service.model.S3Object;
 import org.jets3t.service.security.AWSCredentials;
 
 import dak.ant.types.S3File;
-import dak.ant.types.S3FileSetX;
+import dak.ant.types.S3FileSet;
 
 /** Ant task do do bucket-to-bucket copy.
   *  
@@ -33,7 +33,7 @@ public class S3Copy extends AWSTask
        { // INSTANCE VARIABLES
     
          private String           bucket;
-         private List<S3FileSetX> filesets = new ArrayList<S3FileSetX>();
+         private List<S3FileSet> filesets = new ArrayList<S3FileSet>();
          private boolean          dummyRun = false;
 
          // PROPERTIES
@@ -42,8 +42,8 @@ public class S3Copy extends AWSTask
                 { this.bucket = bucket;
                 }
 
-         public S3FileSetX createS3FileSet() 
-                { S3FileSetX fileset = new S3FileSetX();
+         public S3FileSet createS3FileSet() 
+                { S3FileSet fileset = new S3FileSet();
 
                   filesets.add(fileset);
 
@@ -67,7 +67,7 @@ public class S3Copy extends AWSTask
 
                        // ... match on filesets
 
-                       for (S3FileSetX fileset: filesets)
+                       for (S3FileSet fileset: filesets)
                            { Iterator<S3File> ix = fileset.iterator(service); 
                          
                              while (ix.hasNext()) 

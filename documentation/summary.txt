@@ -1,0 +1,18 @@
+1. Added:
+   - S3Download
+   - S3Synchronize
+   - S3List
+   
+2. Integrated:
+   - S3Copy
+   - S3File
+   - S3Fileset
+   
+3. S3Upload:
+   - added new/changed attribute
+   
+4. S3Delete:
+   - changed to use S3Fileset
+   - removed regex (use Key/Filename selectors instead)
+   
+5. Added dummyRun attribute to S3Delete and S3Copy tasks.

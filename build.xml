@@ -18,26 +18,6 @@
   <pathelement location="${awstasks.classes}" />
  </path>
 
- <taskdef name="s3-list" classname="dak.ant.taskdefs.S3List">
-  <classpath refid="classpath.compile"/>
- </taskdef>
-
- <taskdef name="s3-copy" classname="dak.ant.taskdefs.S3Copy">
-  <classpath refid="classpath.compile"/>
- </taskdef>
-
- <taskdef name="s3-delete" classname="dak.ant.taskdefs.S3Delete">
-  <classpath refid="classpath.compile"/>
- </taskdef>
-
- <typedef name="s3fileset" classname="dak.ant.types.S3FileSetX">
-  <classpath refid="classpath.compile"/>
- </typedef>
-
- <typedef name="key" classname="dak.ant.selectors.S3KeySelector">
-  <classpath refid="classpath.compile"/>
- </typedef>
-	
  <!-- BUILD -->
 	
  <target name="init">
@@ -90,12 +70,51 @@
  </target>
 
  <!-- TEST STUFF -->
-	
- <target name="delete-fileset">
-  <property file="../../dist/aws.properties" />
-  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" dummyRun="true" verbose="true">
-   <s3fileset bucket="provantage-development" includes="**/*.ecf" />
-  </s3-delete>
- </target>
 
+ <taskdef name="s3-list" classname="dak.ant.taskdefs.S3List">
+  <classpath refid="classpath.compile"/>
+  </taskdef>
+
+ <taskdef name="s3-copy" classname="dak.ant.taskdefs.S3Copy">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
+
+ <taskdef name="s3-upload" classname="dak.ant.taskdefs.S3Upload">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
+
+ <taskdef name="s3-download" classname="dak.ant.taskdefs.S3Download">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
+
+ <taskdef name="s3-delete" classname="dak.ant.taskdefs.S3Delete">
+  <classpath refid="classpath.compile"/>
+  </taskdef>
+
+ <taskdef name="s3-delete" classname="dak.ant.taskdefs.S3Delete">
+  <classpath refid="classpath.compile"/>
+ </taskdef>
+
+ <typedef name="s3fileset" classname="dak.ant.types.S3FileSet">
+  <classpath refid="classpath.compile"/>
+ </typedef>
+
+ <typedef name="key" classname="dak.ant.selectors.S3KeySelector">
+  <classpath refid="classpath.compile"/>
+ </typedef>
+
+ <property file="../../dist/aws.properties" />
+	
+ <target name="download">
+  <s3-download accessId="${aws.accessId}"
+  	           secretKey="${aws.secretKey}"
+	           dir="./runtime/download/all"
+	           download="new,changed"
+  	           verbose="true"  >
+   <s3fileset bucket="provantage-development">
+   	<s3file key="development.ecf" />
+   </s3fileset>
+   </s3-download>
+ </target>
+			
 </project>

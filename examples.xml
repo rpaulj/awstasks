@@ -41,7 +41,7 @@
   <classpath refid="classpath.compile"/>
  </taskdef>
 	
- <typedef name="S3Fileset" classname="dak.ant.types.S3FileSetX">
+ <typedef name="S3Fileset" classname="dak.ant.types.S3FileSet">
   <classpath refid="classpath.compile"/>
  </typedef>
 
@@ -162,52 +162,34 @@
  <!-- DOWNLOAD -->
 
  <target name="download-all">
-  <s3-download verbose="true"
-	           accessId="${aws.accessId}"
-               secretKey="${aws.secretKey}"
-               dir="${examples.dir}/download/all"
-               download="new,changed">
-  	<objectset bucket="${examples.bucket}" />
+  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/all" download="new,changed" verbose="true" dummyRun="true">
+   <s3fileset bucket="${examples.bucket}" />
   </s3-download>
  </target>
 		
  <target name="download-includes">
-  <s3-download verbose="true"
-               accessId="${aws.accessId}"
-               secretKey="${aws.secretKey}"
-               dir="${examples.dir}/download/includes"
-               download="new,changed">
-   <objectset bucket="${examples.bucket}" includes="**/*.jar" />
+  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/includes" download="new,changed" verbose="true">
+   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" />
   </s3-download>
  </target>
 
  <target name="download-excludes">
-  <s3-download verbose="true"
-  	           accessId="${aws.accessId}"
-	           secretKey="${aws.secretKey}"
-	           dir="${examples.dir}/download/excludes"
-               download="new,changed">
-   <objectset bucket="${examples.bucket}" excludes="**/*.jar" />
+  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/excludes" download="new,changed"  verbose="true">
+   <s3fileset bucket="${examples.bucket}" excludes="**/*.jar" />
   </s3-download>
  </target>
 
  <target name="download-list">
-  <s3-download verbose="true"
-	  	       accessId="${aws.accessId}"
-		       secretKey="${aws.secretKey}"
-               dir="${examples.dir}/download/list">
-   <objectset bucket="${examples.bucket}">
-   	<object key="development.ecf" />
-   </objectset>
+  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/list" verbose="true">
+   <s3fileset bucket="${examples.bucket}">
+   	<s3file key="development.ecf" />
+   </s3fileset>
   </s3-download>
  </target>
 	
  <target name="download-refid">
-  <s3-download verbose="true"
-	  	       accessId="${aws.accessId}"
-  	           secretKey="${aws.secretKey}"
-	           dir="${examples.dir}/download/refid">
-   <objectset refid="configuration-files" />
+  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/refid" verbose="true">
+   <s3fileset refid="configuration-files" />
   </s3-download>
  </target>
 	
