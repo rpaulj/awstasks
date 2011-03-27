@@ -20,7 +20,7 @@ import org.jets3t.service.model.S3Object;
 import org.jets3t.service.security.AWSCredentials;
 
 import dak.ant.types.S3File;
-import dak.ant.types.S3FileSetX;
+import dak.ant.types.S3FileSet;
 
 /** Ant task to list the S3 objects selected using nested S3FileSet's. Mostly implemented
   * to test the various selectors but may find other uses.
@@ -34,7 +34,7 @@ public class S3List extends AWSTask
          private String           format = "%s::%s";   
          private boolean          append = false;
          private String           outfile;
-         private List<S3FileSetX> filesets = new ArrayList<S3FileSetX>  ();
+         private List<S3FileSet> filesets = new ArrayList<S3FileSet>  ();
 
          // PROPERTIES
 
@@ -50,8 +50,8 @@ public class S3List extends AWSTask
                 { this.append = append;
                 }
 
-         public S3FileSetX createS3FileSet() 
-                { S3FileSetX fileset = new S3FileSetX();
+         public S3FileSet createS3FileSet() 
+                { S3FileSet fileset = new S3FileSet();
 
                   filesets.add(fileset);
 
@@ -73,7 +73,7 @@ public class S3List extends AWSTask
 
                        // ... match on filesets
 
-                       for (S3FileSetX fileset: filesets)
+                       for (S3FileSet fileset: filesets)
                            { Iterator<S3File> ix = fileset.iterator(service); 
                          
                              while (ix.hasNext()) 

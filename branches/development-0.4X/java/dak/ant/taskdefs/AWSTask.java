@@ -109,41 +109,41 @@ public abstract class AWSTask extends MatchingTask {
             throw new BuildException("secretKey must be set");
     }
 
-    /**
-     * Replaces jets3t FileComparer buildFileMap to accommodate Ant filesets.
-     * 
-     * @param root
-     *            Root directory to synchronise.
-     * @param files
-     *            List of files to synchronize.
-     * @throws IOException
-     *             Thrown if the file system fails on File.getCanonicalPath.
-     */
-    protected Map<String, File> buildFileMap(File root, File[] files,
-            String prefix) throws IOException {
-        Map<String, File> fileMap = new HashMap<String, File>();
-        String rootx = normalize(root.getCanonicalPath());
+         /** Replaces jets3t FileComparer buildFileMap to accommodate Ant filesets.
+           * 
+           * @param root Root directory to synchronise.
+           * @param files List of files to synchronize.
+           * @throws IOException Thrown if the file system fails on File.getCanonicalPath.
+           */
+        protected Map<String, File> buildFileMap(File root,File[] files,String prefix) throws IOException 
+                  { Map<String,File> fileMap = new HashMap<String, File>();
+                    String          _root    = normalize(root.getCanonicalPath());
 
-        for (File file : files) {
-            if (file.exists()) {
-                String filepath = normalize(file.getCanonicalPath())
-                        .replaceAll("\\\\", "/");
+                    for (File file: files) 
+                        { if (file.exists()) 
+                             { String filepath = normalize(file.getCanonicalPath()).replaceAll("\\\\", "/");
 
-                if (file.isDirectory()) {
-                    filepath += File.separator;
-                }
+                               if (file.isDirectory()) 
+                                  { filepath += File.separator;
+                                  }
 
-                if (filepath.startsWith(rootx))
-                    fileMap.put(
-                            prefix + filepath.substring(rootx.length() + 1),
-                            file);
-                else
-                    fileMap.put(prefix + filepath, file);
-            }
-        }
+                               if (filepath.startsWith(_root))
+                                  { if (prefix == null)
+                                       fileMap.put(filepath.substring(_root.length() + 1),file);
+                                       else
+                                       fileMap.put(prefix + filepath.substring(_root.length() + 1),file);
+                                  }
+                                  else
+                                  { if (prefix == null)
+                                       fileMap.put(filepath, file);
+                                       else
+                                       fileMap.put(prefix + filepath, file);
+                                  }
+                             }
+                        }
 
-        return fileMap;
-    }
+                    return fileMap;
+                  }
 
     /**
      * Alternative implementation of buildFileMap that accepts a list of strings
