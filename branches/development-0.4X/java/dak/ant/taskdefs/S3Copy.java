@@ -92,16 +92,16 @@ public class S3Copy extends AWSTask
                        log("Copying " + list.size() + " objects");
 
                        for (S3File file: list) 
-                           { S3Object object = new S3Object(file.key);
+                           { S3Object object = new S3Object(file.getKey());
 
                              if (dummyRun)
-                                { log("DUMMY RUN: copied '" + file.bucket + "::" + file.key + "' to '" + bucket + "::" + object.getKey() + "'");
+                                { log("DUMMY RUN: copied '" + file.getBucket() + "::" + file.getKey() + "' to '" + bucket + "::" + object.getKey() + "'");
                                 }
                                 else
-                                { service.copyObject(file.bucket,file.key,bucket,object,true);
+                                { service.copyObject(file.getBucket(),file.getKey(),bucket,object,true);
                                     
                                   if (verbose)
-                                    log("Copied '" + file.bucket + "::" + file.key + "' to '" + bucket + "::" + object.getKey() + "'");
+                                    log("Copied '" + file.getBucket() + "::" + file.getKey() + "' to '" + bucket + "::" + object.getKey() + "'");
                                 }
                            }
                      }
