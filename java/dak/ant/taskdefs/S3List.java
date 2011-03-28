@@ -97,15 +97,15 @@ public class S3List extends AWSTask
                        for (S3File file: list) 
                            { // ... re-use buckets just in case they ever become heavyweight objects
                            
-                             if ((bucket = buckets.get(file.bucket)) == null)
-                                { bucket = new S3Bucket(file.bucket);
+                             if ((bucket = buckets.get(file.getBucket())) == null)
+                                { bucket = new S3Bucket(file.getBucket());
                                 
-                                  buckets.put(file.bucket,bucket);
+                                  buckets.put(file.getBucket(),bucket);
                                 }
                            
                              // ... go dog go !
                              
-                             object = new S3Object(bucket,file.key);
+                             object = new S3Object(bucket,file.getKey());
 
                              if ((outfile == null) || verbose)
                                 log(String.format(format,object.getBucketName(),object.getKey()));

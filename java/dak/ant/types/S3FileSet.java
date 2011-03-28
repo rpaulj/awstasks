@@ -42,6 +42,9 @@ public class S3FileSet extends DataType implements ResourceCollection
 
                   this.bucket   = bucket;
                   this.included = null;
+                  
+                  for (S3File file: files)
+                      file.setBucket(bucket);
                 }
 
          /** Returns the S3 bucket attribute, dereferencing it if required.
@@ -104,6 +107,24 @@ public class S3FileSet extends DataType implements ResourceCollection
 
                   this.defaultPatterns.setExcludes(excludes);
                   this.included = null;
+                }
+
+
+         /** create&lt;Type&gt; implementation for an included <code>S3File</code>.
+           * 
+           */
+         public S3File createS3File() 
+                { if (isReference())
+                     throw noChildrenAllowed();
+
+                  S3File file = new S3File();
+
+                  file.setBucket(this.bucket);
+                  files.add     (file);
+                  
+                  this.included = null;
+
+                  return file;
                 }
 
          /** Sets whether an error is thrown if a bucket does not exist. Default value
@@ -315,8 +336,15 @@ public class S3FileSet extends DataType implements ResourceCollection
                    int      index = 0;
 
                    if (files != null)
-                     for (S3File file: files)
-                         keys[index++] = file.getKey();
+                     { for (S3File file: files)
+                           { String key = file.getKey();
+                           
+                             if (key.startsWith(".") || key.startsWith("/"))
+                                keys[index++] = file.getKey();
+                                else
+                                keys[index++] = "./" + file.getKey();
+                           }
+                     }
 
                   return keys;
                 }

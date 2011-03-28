@@ -22,30 +22,58 @@ import org.jets3t.service.model.S3Object;
  */
 @SuppressWarnings("serial")
 public class S3File extends File 
-       { public  final String bucket;
-         public  final String key;
-         private final int    hashcode;
+       { // INSTANCE VARIABLES
+    
+         private String bucket;
+         private String key;
+         private int    hashcode;
+         private long   lastModified;
+   
+         // CLASS METHODS
          
-         private long         lastModified;
+         private static String clean(String string)
+                 { return string == null ? "" : string;
+                 }
+         
+         // CONSTRUCTORS
+         
+         /** Default constructor for use by <code>S3FileSet.createS3File</code>. Be nice to it !!
+           * 
+           */
+         public S3File()
+                { super("");
+                }
    
          public S3File(String bucket,String key)
                 { super(key);
                  
-                  this.bucket   = bucket;
-                  this.key      = key;
-                  this.hashcode = (bucket + "/" + key).hashCode();
+                  this.bucket   = clean(bucket);
+                  this.key      = clean(key);
+                  this.hashcode = (this.bucket + "/" + this.key).hashCode();
                 }
          
          
          public S3File(S3Object object)
                 { super(object.getKey());
                  
-                  this.bucket       = object.getBucketName();
-                  this.key          = object.getKey();
-                  this.hashcode     = (bucket + "/" + key).hashCode();
+                  this.bucket       = clean(object.getBucketName());
+                  this.key          = clean(object.getKey());
+                  this.hashcode     = (this.bucket + "/" + this.key).hashCode();
                   this.lastModified = object.getLastModifiedDate().getTime();
                 }
 
+         // PROPERTIES
+         
+         public void setBucket(String bucket)
+                { this.bucket = clean(bucket);
+                  this.hashcode = (this.bucket + "/" + this.key).hashCode();
+                }
+         
+         public void setKey(String key)
+                { this.key      = clean(key);
+                  this.hashcode = (this.bucket + "/" + this.key).hashCode();
+                }
+         
          @Override
          public boolean isDirectory()
                 { return false; // currently no such thing as a directory.
@@ -87,7 +115,4 @@ public class S3File extends File
          public int hashCode() 
                 { return hashcode;
                 }
-          
-         
-         
        }

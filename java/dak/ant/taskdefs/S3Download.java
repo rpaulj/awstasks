@@ -164,11 +164,11 @@ public class S3Download extends AWSTask
                                        while (ix.hasNext())
                                              { S3File file = ix.next();
                                   
-                                               if (downloadNew && rs.onlyOnServerKeys.contains(file.key)) 
+                                               if (downloadNew && rs.onlyOnServerKeys.contains(file.getKey())) 
                                                   { list.add(file);
                                                   }
 
-                                               if (downloadChanged && rs.updatedOnServerKeys.contains(file.key))
+                                               if (downloadChanged && rs.updatedOnServerKeys.contains(file.getKey()))
                                                   { list.add(file);
                                                   }
                                              }
@@ -197,18 +197,18 @@ public class S3Download extends AWSTask
                 }
 
          private void fetch(RestS3Service service,S3File file,File dir) throws Exception 
-                 { File _file = new File(dir,file.key);
+                 { File _file = new File(dir,file.getKey());
 
                    if (dummyRun)
-                      { log("DUMMY RUN: Downloading [" + file.bucket + "::" + file.key + "][" + file + "]");
+                      { log("DUMMY RUN: Downloading [" + file.getBucket() + "::" + file.getKey() + "][" + file + "]");
                         return;
                       }
 
                    if (verbose) 
-                      { log("Downloading [" + file.bucket + "::" + file.key + "][" + file + "]");
+                      { log("Downloading [" + file.getBucket() + "::" + file.getKey() + "][" + file + "]");
                       }
 
-                   S3Object object = service.getObject(file.bucket,file.key);
+                   S3Object object = service.getObject(file.getBucket(),file.getKey());
 
                    if ("application/x-directory".equals(object.getContentType())) 
                       { _file.mkdirs();
@@ -234,7 +234,7 @@ public class S3Download extends AWSTask
                       { if (failOnError)
                            throw x;
                       
-                        log("Could not retrieve file '" + file.bucket + "::" + file.key + "' from Amazon S3 [" + x.getMessage() + "]", LogLevel.ERR.getLevel());
+                        log("Could not retrieve file '" + file.getBucket() + "::" + file.getKey() + "' from Amazon S3 [" + x.getMessage() + "]", LogLevel.ERR.getLevel());
                       }
                    finally 
                       { close(in);
