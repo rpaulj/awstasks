@@ -162,7 +162,7 @@
  <!-- DOWNLOAD -->
 
  <target name="download-all">
-  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/all" download="new,changed" verbose="true" dummyRun="true">
+  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/all" download="all" verbose="true" dummyRun="true">
    <s3fileset bucket="${examples.bucket}" />
   </s3-download>
  </target>

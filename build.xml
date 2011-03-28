@@ -109,7 +109,7 @@
   <s3-download accessId="${aws.accessId}"
   	           secretKey="${aws.secretKey}"
 	           dir="./runtime/download/all"
-	           download="new,changed"
+	           download="all,new,changed"
   	           verbose="true"  >
    <s3fileset bucket="provantage-development">
    	<s3file key="development.ecf" />
