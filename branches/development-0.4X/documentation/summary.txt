@@ -1,18 +1,34 @@
-1. Added:
-   - S3Download
-   - S3Synchronize
-   - S3List
+S3Upload
+--------
+1. Added new/changed task attribute.
+2. Added dummy run task attribute.
+
+S3Delete
+--------
+1. Added S3Fileset support.
+2. Removed regex task attribute (redundant - use Key/Filename selectors instead).
+3. Added dummy run task attribute.
+
+S3Copy
+------
+1. Added automatic bucket creation.
+2. Added dummy run task attribute.
+
+S3FileSet
+---------
+1. Removed ResourceCollection implementation.
+2. Removed SelectorContainer implementation.
+3. Added includes/excludes patterns
+4. Added nested S3Files.
+5. Commented out unsupported/untested selectors.
+
+S3File
+------
+1. Added bucket field.
+
+New Tasks
+---------
+1. S3Download
+2. S3Synchronize
+3. S3List
    
-2. Integrated:
-   - S3Copy
-   - S3File
-   - S3Fileset
-   
-3. S3Upload:
-   - added new/changed attribute
-   
-4. S3Delete:
-   - changed to use S3Fileset
-   - removed regex (use Key/Filename selectors instead)
-   
-5. Added dummyRun attribute to S3Delete and S3Copy tasks.

@@ -92,7 +92,7 @@ public class S3Delete extends AWSTask
                              object = new S3Object(bucket,file.getKey());
 
                              if (dummyRun)
-                                { log("DUMMY RUN: deleted '[" + object.getBucketName() + "][" + object.getKey() + "'");
+                                { log(DUMMY_RUN + " Deleted '[" + object.getBucketName() + "][" + object.getKey() + "'");
                                 }
                                 else
                                 { service.deleteObject(object.getBucketName(), object.getKey());

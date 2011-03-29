@@ -87,7 +87,7 @@
   <classpath refid="classpath.compile"/>
  </taskdef>
 
- <taskdef name="s3-delete" classname="dak.ant.taskdefs.S3Delete">
+ <taskdef name="s3-synchronize" classname="dak.ant.taskdefs.S3Synchronize">
   <classpath refid="classpath.compile"/>
   </taskdef>
 
@@ -105,16 +105,18 @@
 
  <property file="../../dist/aws.properties" />
 	
- <target name="download">
-  <s3-download accessId="${aws.accessId}"
-  	           secretKey="${aws.secretKey}"
-	           dir="./runtime/download/all"
-	           download="all,new,changed"
-  	           verbose="true"  >
-   <s3fileset bucket="provantage-development">
-   	<s3file key="development.ecf" />
-   </s3fileset>
-   </s3-download>
+ <target name="synchronize-upload">
+  <s3-synchronize accessId="${aws.accessId}" 
+   	              secretKey="${aws.secretKey}" 
+   	              bucket="awstask-synchronize"
+   	              direction="upload"
+  	              delete="false"
+  	              revert="false"
+                  includeDirectories="true"
+  	              dummyRun="false"
+   	              verbose="true" >
+   <fileset dir="./runtime/synchronize/upload" includes="**/*" excludes="**/.DSStore" />
+  </s3-synchronize>
  </target>
 			
 </project>
