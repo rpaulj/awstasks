@@ -9,6 +9,7 @@
 
  <property name="examples.credentials" value="aws.properties"     />
  <property name="examples.bucket"      value="awstasks-test"      />
+ <property name="examples.bucket.copy" value="awstasks-test-copy" />
  <property name="examples.dir"         value="${basedir}/runtime" />
 
  <property file="${examples.credentials}" />
@@ -54,7 +55,7 @@
  <!-- COPY -->
 		
  <target name="copy-fileset">
-  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" verbose="true">
+  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" verbose="true">
    <s3:fileset bucket="provantage-development" includes="**/*.jar" >
     <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
    </s3:fileset>
@@ -62,7 +63,7 @@
  </target>
 
  <target name="copy-fileset-date">
-  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" dummyRun="true" verbose="true">
+  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" dummyRun="true" verbose="true">
    <s3:fileset bucket="${examples.bucket}" includes="**/*.jar" >
     <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
    </s3:fileset>
@@ -70,7 +71,7 @@
  </target>
 
  <target name="copy-fileset-regex-1.7">
-  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" dummyRun="true" verbose="true">
+  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" dummyRun="true" verbose="true">
    <s3:fileset bucket="${examples.bucket}" includes="**/*.jar" >
     <key regex="org" />
    </s3:fileset>
@@ -86,7 +87,7 @@
    </condition>
   </fail>
  	
-  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.2}" dummyRun="true" verbose="true">
+  <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" dummyRun="true" verbose="true">
    <s3:fileset bucket="${examples.bucket}" includes="**/*.jar" >
     <filename regex="org" />
    </s3:fileset>
@@ -167,7 +168,7 @@
  	              delete="false"
  	              revert="false"
                   includeDirectories="true"
-  	              noAction="false"
+  	              dummyRun="false"
   	              verbose="true" >
    <fileset dir="${examples.dir}/synchronize" includes="**/*" excludes="**/.DSStore" />
   </s3:synchronize>
@@ -181,7 +182,7 @@
  	              delete="false"
  	              revert="false"
                   includeDirectories="true"
-  	              noAction="false"
+  	              dummyRun="false"
   	              verbose="true" >
    <fileset dir="${examples.dir}/synchronize" includes="**/*" excludes="**/.DSStore" />
   </s3:synchronize>

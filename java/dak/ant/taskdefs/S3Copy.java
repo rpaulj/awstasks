@@ -95,7 +95,7 @@ public class S3Copy extends AWSTask
                            { S3Object object = new S3Object(file.getKey());
 
                              if (dummyRun)
-                                { log("DUMMY RUN: copied '" + file.getBucket() + "::" + file.getKey() + "' to '" + bucket + "::" + object.getKey() + "'");
+                                { log(DUMMY_RUN + " Copied '" + file.getBucket() + "::" + file.getKey() + "' to '" + bucket + "::" + object.getKey() + "'");
                                 }
                                 else
                                 { service.copyObject(file.getBucket(),file.getKey(),bucket,object,true);

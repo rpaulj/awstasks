@@ -200,7 +200,7 @@ public class S3Download extends AWSTask
                  { File _file = new File(dir,file.getKey());
 
                    if (dummyRun)
-                      { log("DUMMY RUN: Downloading [" + file.getBucket() + "::" + file.getKey() + "][" + file + "]");
+                      { log(DUMMY_RUN + " Downloading [" + file.getBucket() + "::" + file.getKey() + "][" + file + "]");
                         return;
                       }
 

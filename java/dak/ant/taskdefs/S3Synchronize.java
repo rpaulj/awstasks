@@ -26,52 +26,50 @@ import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.utils.FileComparer;
 import org.jets3t.service.utils.FileComparerResults;
 
-/**
- * Implements an Ant task with the JetS3t synchronise functionality.
- * 
- * @author Tony Seebregts
- */
-public class S3Synchronize extends AWSTask { 
-    
-    // CONSTANTS
+/** Implements an Ant task with the JetS3t synchronise functionality.
+  * 
+  * @author Tony Seebregts
+  */
+public class S3Synchronize extends AWSTask 
+       { // CONSTANTS
 
-    private enum DIRECTION {
-        UPLOAD("upload"), DOWNLOAD("download");
+         private enum DIRECTION { UPLOAD("upload"), 
+                                  DOWNLOAD("download");
 
-        private final String code;
+                                  private final String code;
 
-        private DIRECTION(String code) {
-            this.code = code;
-        }
+                                  private DIRECTION(String code) 
+                                          { this.code = code;
+                                          }
 
-        private static DIRECTION parse(String code) {
-            for (DIRECTION direction : values()) {
-                if (direction.code.equalsIgnoreCase(code))
-                    return direction;
-            }
+                                  private static DIRECTION parse(String code) 
+                                          { for (DIRECTION direction: values()) 
+                                                { if (direction.code.equalsIgnoreCase(code))
+                                                     return direction;
+                                                }
 
-            return null;
-        }
-    };
+                                            return null;
+                                          }
+                                };
 
-    // INSTANCE VARIABLES
+         // INSTANCE VARIABLES
 
-    private String bucket;
-    private String prefix = "";
-    private boolean publicRead = false;
-    private List<FileSet> filesets = new ArrayList<FileSet>();
-    private boolean cacheNeverExpires = false;
-    private MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
-    private String mimeTypesFile;
-    private AccessControlList acl;
+         private String               bucket;
+         private String               prefix            = "";
+         private boolean              publicRead        = false;
+         private List<FileSet>        filesets          = new ArrayList<FileSet>();
+         private boolean              cacheNeverExpires = false;
+         private MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+         private String               mimeTypesFile;
+         private AccessControlList    acl;
 
-    private DIRECTION direction;
-    private boolean includeDirectories = true;
-    private boolean noAction = false;
-    private boolean delete = true;
-    private boolean revert = true;
+         private DIRECTION direction;
+         private boolean   includeDirectories = true;
+         private boolean   dummyRun = false;
+         private boolean   delete   = true;
+         private boolean   revert   = true;
 
-    // PROPERTIES
+         // PROPERTIES
 
     public void setBucket(String bucket) {
         this.bucket = bucket;
@@ -105,342 +103,310 @@ public class S3Synchronize extends AWSTask {
         this.direction = DIRECTION.parse(direction);
     }
 
-    public void setNoAction(boolean enabled) {
-        this.noAction = enabled;
-    }
-
-    public void setDelete(boolean enabled) {
-        this.delete = enabled;
-    }
-
-    public void setRevert(boolean enabled) {
-        this.revert = enabled;
-    }
-
-    // IMPLEMENTATION
-
-    /**
-     * Check that all required attributes have been set and warns if the fileset
-     * list is empty.
-     * 
-     * @since Ant 1.5
-     * @exception BuildException
-     *                if an error occurs
-     */
-    @Override
-    protected void checkParameters() throws BuildException {
-        super.checkParameters();
-
-        if (direction == null) {
-            throw new BuildException(
-                    "Invalid SYNCHRONIZE direction. Valid values are 'upload' or 'download'");
-        }
-
-        if (filesets == null) {
-            log("No fileset specified, doing nothing", LogLevel.WARN.getLevel());
-            return;
-        }
-    }
-
-    /**
-     * Validates the parameters and then synchronizes the S3 and file specified
-     * in the filesets.
-     * 
-     * @throws BuildException
-     *             Thrown if the parameters are invalid or the synchronize
-     *             failed.
-     */
-    @Override
-    public void execute() throws BuildException {
-        checkParameters();
-
-        try { // ... initialise
-
-            AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
-            RestS3Service s3 = new RestS3Service(credentials);
-            S3Bucket bucket = new S3Bucket(this.bucket);
-
-            if (publicRead) {
-                acl = s3.getBucketAcl(bucket);
-                acl.grantPermission(GroupGrantee.ALL_USERS,
-                        Permission.PERMISSION_READ);
-            }
-
-            if (mimeTypesFile != null)
-                mimeTypesMap = new MimetypesFileTypeMap(mimeTypesFile);
-            else
-                mimeTypesMap = new MimetypesFileTypeMap();
-
-            // ... synchronise directory
-
-            try {
-                for (FileSet fs : filesets) {
-                    DirectoryScanner ds = fs.getDirectoryScanner(getProject());
-                    File root = fs.getDir(getProject());
-                    String[] subdirs = ds.getIncludedDirectories();
-                    String[] files = ds.getIncludedFiles();
-                    List<File> list = new ArrayList<File>();
-
-                    if (includeDirectories) {
-                        for (String dir : subdirs) {
-                            list.add(new File(root, dir));
-                        }
-                    }
-
-                    for (String file : files) {
-                        list.add(new File(root, file));
-                    }
-
-                    switch (direction) {
-                    case UPLOAD:
-                        upload(s3, bucket, root, list.toArray(new File[0]));
-                        break;
-
-                    case DOWNLOAD:
-                        download(s3, bucket, root, list.toArray(new File[0]));
-                        break;
-                    }
+         public void setDummyRun(boolean enabled) 
+                { this.dummyRun = enabled;
                 }
 
-            } catch (BuildException x) {
-                if (failOnError)
-                    throw x;
+         public void setDelete(boolean enabled) 
+                { this.delete = enabled;
+                }
 
-                log("Error synchronizing files with Amazon S3 ["
-                        + x.getMessage() + "]", LogLevel.ERR.getLevel());
-            }
-        } catch (Exception x) {
-            throw new BuildException(x);
-        }
-    }
+         public void setRevert(boolean enabled) 
+                { this.revert = enabled;
+                }
 
-    private void upload(RestS3Service service, S3Bucket bucket, File root,
-            File[] list) throws Exception { // ... create bucket if necessary
+         // IMPLEMENTATION
 
-        if (service.getBucket(bucket.getName()) == null) {
-            log("Bucket '" + bucket.getName()
-                    + "' does not exist ! Creating ...",
-                    LogLevel.WARN.getLevel());
-            service.createBucket(bucket);
-        }
+         /** Check that all required attributes have been set and warns if the fileset
+           * list is empty.
+           * 
+           * @since Ant 1.5
+           * @exception BuildException
+           *                if an error occurs
+           */
+         @Override
+         protected void checkParameters() throws BuildException 
+                   { super.checkParameters();
 
-        // ... build change list
+                     if (direction == null) 
+                        { throw new BuildException("Invalid SYNCHRONIZE direction. Valid values are 'upload' or 'download'");
+                        }
 
-        FileComparer fc = FileComparer.getInstance();
-        Map<String, File> files = buildFileMap(root, list, prefix);
-        Map<String, StorageObject> objects = fc.buildObjectMap(service,
-                bucket.getName(), "", false, null);
-        FileComparerResults rs = fc.buildDiscrepancyLists(files, objects);
-        AccessControlList acl = publicRead ? this.acl : null;
+                     if (filesets == null) 
+                        { log("No fileset specified, doing nothing", LogLevel.WARN.getLevel());
+                          return;
+                        }
+                   }
 
-        // ... synchronize
+         /**
+          * Validates the parameters and then synchronizes the S3 and file specified
+          * in the filesets.
+          * 
+          * @throws BuildException
+          *             Thrown if the parameters are invalid or the synchronize
+          *             failed.
+          */
+         @Override
+         public void execute() throws BuildException {
+             checkParameters();
 
-        for (String key : rs.onlyOnClientKeys) {
-            File file = files.get(key);
-            String contentType = mimeTypesMap.getContentType(file);
+             try { // ... initialise
 
-            if (noAction)
-                log("ADD: [" + key + "]");
-            else {
-                if (verbose)
-                    log("Added: " + "[" + key + "][" + file + "]");
+                 AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
+                 RestS3Service s3 = new RestS3Service(credentials);
+                 S3Bucket bucket = new S3Bucket(this.bucket);
 
-                upload(service, bucket, acl, cacheNeverExpires, key, file,
-                        contentType);
-            }
-        }
+                 if (publicRead) {
+                     acl = s3.getBucketAcl(bucket);
+                     acl.grantPermission(GroupGrantee.ALL_USERS,
+                             Permission.PERMISSION_READ);
+                 }
 
-        for (String key : rs.updatedOnClientKeys) {
-            File file = files.get(key);
-            String contentType = mimeTypesMap.getContentType(file);
+                 if (mimeTypesFile != null)
+                     mimeTypesMap = new MimetypesFileTypeMap(mimeTypesFile);
+                 else
+                     mimeTypesMap = new MimetypesFileTypeMap();
 
-            if (noAction)
-                log("UPDATE: [" + key + "]");
-            else {
-                if (verbose)
-                    log("Updated: " + "[" + key + "][" + file + "]");
+                 // ... synchronise directory
 
-                upload(service, bucket, acl, cacheNeverExpires, key, file,
-                        contentType);
-                upload(service, bucket, acl, cacheNeverExpires, key,
-                        files.get(key), "Updated: ");
-            }
-        }
+                 try {
+                     for (FileSet fs : filesets) {
+                         DirectoryScanner ds = fs.getDirectoryScanner(getProject());
+                         File root = fs.getDir(getProject());
+                         String[] subdirs = ds.getIncludedDirectories();
+                         String[] files = ds.getIncludedFiles();
+                         List<File> list = new ArrayList<File>();
 
-        for (String key : rs.onlyOnServerKeys) {
-            if (noAction)
-                log("DELETE: [" + key + "]");
-            else if (delete) {
-                delete(service, bucket, key, "Deleted: ");
-            }
-        }
+                         if (includeDirectories) {
+                             for (String dir : subdirs) {
+                                 list.add(new File(root, dir));
+                             }
+                         }
 
-        for (String key : rs.updatedOnServerKeys) {
-            File file = files.get(key);
-            String contentType = mimeTypesMap.getContentType(file);
+                         for (String file : files) {
+                             list.add(new File(root, file));
+                         }
 
-            if (noAction)
-                log("REVERT: [" + key + "]");
-            else if (revert) {
-                if (verbose)
-                    log("Reverted: " + "[" + key + "][" + file + "]");
+                         switch (direction) {
+                         case UPLOAD:
+                             upload(s3, bucket, root, list.toArray(new File[0]));
+                             break;
 
-                upload(service, bucket, acl, cacheNeverExpires, key, file,
-                        contentType);
-                upload(service, bucket, acl, cacheNeverExpires, key,
-                        files.get(key), "Updated: ");
-            }
-        }
-    }
+                         case DOWNLOAD:
+                             download(s3, bucket, root, list.toArray(new File[0]));
+                             break;
+                         }
+                     }
 
-    private void download(RestS3Service service, S3Bucket bucket, File root,
-            File[] list) throws Exception { // ... build change list
+                 } catch (BuildException x) {
+                     if (failOnError)
+                         throw x;
 
-        FileComparer fc = FileComparer.getInstance();
-        Map<String, File> files = buildFileMap(root, list, prefix);
-        Map<String, StorageObject> objects = fc.buildObjectMap(service,
-                bucket.getName(), "", false, null);
-        FileComparerResults rs = fc.buildDiscrepancyLists(files, objects);
+                     log("Error synchronizing files with Amazon S3 ["
+                             + x.getMessage() + "]", LogLevel.ERR.getLevel());
+                 }
+             } catch (Exception x) {
+                 throw new BuildException(x);
+             }
+         }
 
-        // ... synchronize
+         private void upload(RestS3Service service,S3Bucket bucket,File root,File[] list) throws Exception
+                 { // ... create bucket if necessary
 
-        for (String key : rs.onlyOnServerKeys) {
-            if (noAction)
-                log("ADD: [" + key + "]");
-            else
-                download(service, bucket, key, new File(root, key), "Added:");
-        }
+                   if (service.getBucket(bucket.getName()) == null) 
+                      { log("Bucket '" + bucket.getName() + "' does not exist ! Creating ...",LogLevel.WARN.getLevel());
+                        service.createBucket(bucket);
+                      }
 
-        for (String key : rs.updatedOnServerKeys) {
-            if (noAction)
-                log("UPDATE: [" + key + "]");
-            else
-                download(service, bucket, key, files.get(key), "Updated: ");
-        }
+                   // ... build change list
 
-        for (String key : rs.onlyOnClientKeys) {
-            if (noAction)
-                log("DELETE: [" + key + "]");
-            else if (delete)
-                delete(files.get(key), "Deleted: ");
-        }
+                   FileComparer              fc      = FileComparer.getInstance();
+                   Map<String,File>          files   = buildFileMap     (root,list,prefix);
+                   Map<String,StorageObject> objects = fc.buildObjectMap(service,bucket.getName(),"",false,null);
+                   FileComparerResults       rs      = fc.buildDiscrepancyLists(files, objects);
+                   AccessControlList         acl     = publicRead ? this.acl : null;
 
-        for (String key : rs.updatedOnClientKeys) {
-            if (noAction)
-                log("REVERT: [" + key + "]");
-            else if (revert)
-                download(service, bucket, key, files.get(key), "Reverted: ");
-        }
-    }
+                   // ... synchronize
 
-    /**
-     * Downloads a file from an S3 bucket.
-     * 
-     * @param s3
-     *            Initialised S3Service.
-     * @param key
-     *            S3 object key for file to download.
-     * @param file
-     *            Local file to which to download.
-     * @param action
-     *            Action text for log message.
-     * 
-     * @throws Exception
-     *             Thrown if the file upload fails for any reason.
-     */
-    private void download(RestS3Service s3, S3Bucket bucket, String key,
-            File file, String action) throws Exception {
-        if (verbose) {
-            log(action + "[" + key + "][" + file + "]");
-        }
+                   for (String key : rs.onlyOnClientKeys) 
+                       { File   file        = files.get(key);
+                         String contentType = mimeTypesMap.getContentType(file);
 
-        // ... get object
+                         if (dummyRun)
+                            log(DUMMY_RUN + " Added: [" + key + "]");
+                            else 
+                            { if (verbose)
+                                 log("Added: " + "[" + key + "][" + file + "]");
 
-        S3Object object = s3.getObject(bucket.getName(), key);
+                              upload(service,bucket,acl,cacheNeverExpires,key,file,contentType);
+                            }
+                       }
 
-        // ... directory ?
+                   for (String key : rs.updatedOnClientKeys) 
+                       { File   file        = files.get(key);
+                         String contentType = mimeTypesMap.getContentType(file);
 
-        if (!object.isMetadataComplete() && (object.getContentLength() == 0)
-                && !object.isDirectoryPlaceholder()) {
-            log("Skipping '" + key + "' - may or may not be a directory");
-            return;
-        }
+                         if (dummyRun)
+                           log(DUMMY_RUN + " Updated: [" + key + "]");
+                           else 
+                           { if (verbose)
+                                log("Updated: " + "[" + key + "][" + file + "]");
 
-        if (object.isMetadataComplete() && (object.getContentLength() == 0)
-                && object.isDirectoryPlaceholder()) {
-            log("Creating directory '" + key + "'");
-            file.mkdirs();
-            return;
-        }
+                             upload(service,bucket,acl,cacheNeverExpires,key,file,contentType);
+                           }
+                       }
 
-        if (file.exists() && file.isDirectory()) {
-            log("Warning: file '" + key + "' exists as a directory");
-            return;
-        }
+                   for (String key: rs.onlyOnServerKeys) 
+                       { if (dummyRun)
+                            log(DUMMY_RUN + " Deleted: [" + key + "]");
+                            else if (delete) 
+                            delete(service, bucket, key, "Deleted: ");
+                       }
 
-        // ... download file
+                   for (String key: rs.updatedOnServerKeys) 
+                       { File   file        = files.get(key);
+                         String contentType = mimeTypesMap.getContentType(file);
 
-        byte[] buffer = new byte[16384];
-        InputStream in = null;
-        OutputStream out = null;
-        int N;
+                         if (dummyRun)
+                           log(DUMMY_RUN + " Reverted: [" + key + "]");
+                           else if (revert)
+                           { if (verbose)
+                               log("Reverted: " + "[" + key + "][" + file + "]");
 
-        try {
-            file.getParentFile().mkdirs();
+                             upload(service,bucket,acl,cacheNeverExpires,key,file,contentType);
+                           }
+                       }
+                 }
 
-            in = object.getDataInputStream();
-            out = new FileOutputStream(file);
+         private void download(RestS3Service service,S3Bucket bucket,File root,File[] list) throws Exception 
+                 { // ... build change list
 
-            while ((N = in.read(buffer)) != -1) {
-                out.write(buffer, 0, N);
-            }
-        } finally {
-            close(in);
-            close(out);
-        }
-    }
+                   FileComparer              fc      = FileComparer.getInstance();
+                   Map<String,File>          files   = buildFileMap     (root,list,prefix);
+                   Map<String,StorageObject> objects = fc.buildObjectMap(service,bucket.getName(),"",false,null);
+                   FileComparerResults       rs      = fc.buildDiscrepancyLists(files, objects);
 
-    /**
-     * Deletes a file from an S3 bucket.
-     * 
-     * @param s3
-     *            Initialised S3Service.
-     * @param bucket
-     *            Initialised S3Bucket.
-     * @param key
-     *            S3 object key to delete.
-     * @param action
-     *            Action text for log message.
-     * 
-     * @throws Exception
-     *             Thrown if the file upload fails for any reason.
-     */
-    private void delete(RestS3Service s3, S3Bucket bucket, String key,
-            String action) throws Exception {
-        if (verbose) {
-            log(action + "[" + key + "]");
-        }
+                   // ... synchronize
 
-        s3.deleteObject(bucket, key);
-    }
+                   for (String key: rs.onlyOnServerKeys) 
+                       { if (dummyRun)
+                            log(DUMMY_RUN + " Added: [" + key + "]");
+                            else
+                            download(service,bucket, key, new File(root, key), "Added:");
+                       }
 
-    /**
-     * Deletes a local file.
-     * 
-     * @param file
-     *            Local file to delete.
-     * @param action
-     *            Action text for log message.
-     * 
-     * @throws Exception
-     *             Thrown if the file upload fails for any reason.
-     */
-    private void delete(File file, String action) throws Exception {
-        if (verbose) {
-            log(action + "[" + file + "]");
-        }
+                   for (String key: rs.updatedOnServerKeys)
+                       { if (dummyRun)
+                            log(DUMMY_RUN + " Updated: [" + key + "]");
+                            else
+                            download(service,bucket,key,files.get(key),"Updated: ");
+                       }
 
-        if (file.exists())
-            file.delete();
-    }
-}
+                   for (String key: rs.onlyOnClientKeys)
+                       { if (dummyRun)
+                            log(DUMMY_RUN + " Deleted: [" + key + "]");
+                            else if (delete)
+                            delete(files.get(key),"Deleted: ");
+                       }
+
+                   for (String key: rs.updatedOnClientKeys) 
+                       { if (dummyRun)
+                            log(DUMMY_RUN + " Reverted: [" + key + "]");
+                            else if (revert)
+                            download(service, bucket, key, files.get(key), "Reverted: ");
+                       }
+                 }
+
+         /** Downloads a file from an S3 bucket.
+           * 
+           * @param s3     Initialised S3Service.
+           * @param key    S3 object key for file to download.
+           * @param file  Local file to which to download.
+           * @param action Action text for log message.
+           * 
+           * @throws Exception Thrown if the file upload fails for any reason.
+           */
+         private void download(RestS3Service s3,S3Bucket bucket, String key,File file,String action) throws Exception
+                 { if (verbose) 
+                      { log(action + "[" + key + "][" + file + "]");
+                      }
+
+                   // ... get object
+
+                   S3Object object = s3.getObject(bucket.getName(), key);
+
+                   // ... directory ?
+
+                   if (!object.isMetadataComplete() && (object.getContentLength() == 0) && !object.isDirectoryPlaceholder()) 
+                      { log("Skipping '" + key + "' - may or may not be a directory");
+                        return;
+                      }
+
+                   if (object.isMetadataComplete() && (object.getContentLength() == 0) && object.isDirectoryPlaceholder()) 
+                      { log("Creating directory '" + key + "'");
+                        file.mkdirs();
+                        return;
+                      }
+
+                   if (file.exists() && file.isDirectory()) 
+                      { log("Warning: file '" + key + "' exists as a directory");
+                        return;
+                      }
+
+                   // ... download file
+
+                   byte[]       buffer = new byte[16384];
+                   InputStream  in     = null;
+                   OutputStream out    = null;
+                   int          N;
+
+                   try
+                      { file.getParentFile().mkdirs();
+
+                        in = object.getDataInputStream();
+                        out = new FileOutputStream(file);
+
+                        while ((N = in.read(buffer)) != -1) 
+                              { out.write(buffer,0,N);
+                              }
+                      }
+                   finally
+                      { close(in);
+                        close(out);
+                      }
+                 }
+
+         /** Deletes a file from an S3 bucket.
+           * 
+           * @param s3     Initialised S3Service.
+           * @param bucket Initialised S3Bucket.
+           * @param key    S3 object key to delete.
+           * @param action Action text for log message.
+           * 
+           * @throws Exception
+           *             Thrown if the file upload fails for any reason.
+           */
+         private void delete(RestS3Service s3,S3Bucket bucket,String key,String action) throws Exception 
+                 { if (verbose)
+                      { log(action + "[" + key + "]");
+                      }
+
+                   s3.deleteObject(bucket, key);
+                 }
+
+         /** Deletes a local file.
+           * 
+           * @param file   Local file to delete.
+           * @param action Action text for log message.
+           * 
+           * @throws Exception Thrown if the file upload fails for any reason.
+           */
+         private void delete(File file,String action) throws Exception
+                 { if (verbose) 
+                      { log(action + "[" + file + "]");
+                      }
+
+                   if (file.exists())
+                      file.delete();
+                 }
+       }

@@ -22,29 +22,28 @@ import org.jets3t.service.security.AWSCredentials;
 import org.jets3t.service.utils.FileComparer;
 import org.jets3t.service.utils.FileComparerResults;
 
-/**
- * This class provides basic S3 actions as an Ant task.
- * 
- * @author D. Kavanagh
- */
-public class S3Upload extends AWSTask { 
-    
-    // CONSTANTS
+/** This class provides basic S3 actions as an Ant task.
+  * 
+  * @author D. Kavanagh
+  */
+public class S3Upload extends AWSTask 
+       { // CONSTANTS
 
-    // INSTANCE VARIABLES
+         // INSTANCE VARIABLES
 
-    private String bucket;
-    private String prefix = "";
-    private boolean publicRead = false;
-    private List<FileSet> filesets = new ArrayList<FileSet>();
-    private boolean cacheNeverExpires = false;
-    private String mimeTypesFile = null;
-    private boolean uploadAll = false;
-    private boolean uploadNew = false;
-    private boolean uploadChanged = false;
+         private String        bucket;
+         private String        prefix            = "";
+         private boolean       publicRead        = false;
+         private List<FileSet> filesets          = new ArrayList<FileSet>();
+         private boolean       cacheNeverExpires = false;
+         private String        mimeTypesFile     = null;
+         private boolean       uploadAll         = false;
+         private boolean       uploadNew         = false;
+         private boolean       uploadChanged     = false;
+         private boolean       dummyRun          = false;
 
-    private MimetypesFileTypeMap mimeTypesMap;
-    private AccessControlList bucketAcl;
+         private MimetypesFileTypeMap mimeTypesMap;
+         private AccessControlList bucketAcl;
 
     // PROPERTIES
 
@@ -89,6 +88,10 @@ public class S3Upload extends AWSTask {
                 uploadChanged = true;
         }
     }
+
+        public void setDummyRun(boolean enabled) 
+               { this.dummyRun = enabled;
+               }
 
     // IMPLEMENTATION
 
@@ -199,36 +202,39 @@ public class S3Upload extends AWSTask {
         }
     }
 
-    private void upload(RestS3Service service, S3Bucket bucket, File root,
-            File file) throws Exception { // ... validate
+         private void upload(RestS3Service service,S3Bucket bucket,File root,File file) throws Exception 
+                 { // ... validate
 
-        if (!file.exists()) {
-            log("File '" + file.getPath() + "' does not exist",
-                    LogLevel.WARN.getLevel());
-            return;
-        }
+                   if (!file.exists()) 
+                      { log("File '" + file.getPath() + "' does not exist",LogLevel.WARN.getLevel());
+                        return;
+                      }
 
-        // ... normalise
+                   // ... normalise
 
-        AccessControlList acl = publicRead ? this.bucketAcl : null;
-        String contentType = mimeTypesMap.getContentType(file);
-        String filepath = normalize(file.getCanonicalPath()).replaceAll("\\\\",
-                "/");
-        String rootx = normalize(root.getCanonicalPath());
-        String key;
+                   AccessControlList acl         = publicRead ? this.bucketAcl : null;
+                   String            contentType = mimeTypesMap.getContentType(file);
+                   String            filepath    = normalize(file.getCanonicalPath()).replaceAll("\\\\", "/");
+                   String            rootx       = normalize(root.getCanonicalPath());
+                   String            key;
 
-        if (file.isDirectory())
-            filepath += File.separator;
+                   if (file.isDirectory())
+                      filepath += File.separator;
 
-        if (filepath.startsWith(rootx))
-            key = prefix + filepath.substring(rootx.length() + 1);
-        else
-            key = prefix + filepath;
+                   if (filepath.startsWith(rootx))
+                      key = prefix + filepath.substring(rootx.length() + 1);
+                      else
+                      key = prefix + filepath;
+        
+                   if (dummyRun)
+                      { log(DUMMY_RUN + " Uploading [" + file.getCanonicalPath() + "][" + key + "]");
+                      }
+                      else
+                      { if (verbose) 
+                           { log("Uploading [" + file.getCanonicalPath() + "][" + key + "]");
+                           }
 
-        if (verbose) {
-            log("Uploading [" + file.getCanonicalPath() + "][" + key + "]");
-        }
-
-        upload(service, bucket, acl, cacheNeverExpires, key, file, contentType);
-    }
+                        upload(service,bucket,acl,cacheNeverExpires,key,file,contentType);
+                      }
+                 }
 }
