@@ -14,9 +14,9 @@
 
  <property file="${examples.credentials}" />
 
- <s3:objectset bucket="${examples.bucket}" id="configuration-files">
-  <s3:object key="awstasks.config" />
- </s3:objectset>
+ <s3:fileset bucket="${examples.bucket}" id="configuration-files">
+  <s3:file key="*.conf" />
+ </s3:fileset>
 	
  <!-- LIST -->
 			

@@ -14,7 +14,5 @@
 
  <typedef name="fileset"   classname="dak.ant.types.S3FileSet"       />
  <typedef name="files"     classname="dak.ant.types.S3File"          />
- <typedef name="objectset" classname="dak.ant.types.S3ObjectSet"     />
- <typedef name="object"    classname="dak.ant.types.S3ObjectWrapper" />
  
 </antlib>
