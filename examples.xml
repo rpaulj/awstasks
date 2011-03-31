@@ -66,9 +66,9 @@
              a typedef does not work.
    -->
 
- <objectset bucket="${examples.bucket}" id="configuration-files">
-  <object key="development.conf" />
- </objectset>
+ <s3fileset bucket="${examples.bucket}" id="configuration-files">
+  <object key="*.conf" />
+ </s3fileset>
 	
  <!-- LIST -->
 		
@@ -79,6 +79,16 @@
    </s3fileset>
   </s3-list>
  </target>
+
+ <target name="list-fileset-patternset">
+  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3fileset bucket="${examples.bucket">
+   	<patternset>
+   	  <include name="**/*.jar"/>
+   	</patternset>
+   </s3fileset>
+  </s3-list>
+ </target> 	
 
  <target name="list-fileset-regex-1.7">
   <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
@@ -102,7 +112,6 @@
     <filename regex="org" />
    </s3fileset>
   </s3-list>
- 	
  </target>
 	
  <!-- COPY -->

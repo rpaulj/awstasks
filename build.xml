@@ -105,18 +105,14 @@
 
  <property file="../../dist/aws.properties" />
 	
- <target name="synchronize-upload">
-  <s3-synchronize accessId="${aws.accessId}" 
-   	              secretKey="${aws.secretKey}" 
-   	              bucket="awstask-synchronize"
-   	              direction="upload"
-  	              delete="false"
-  	              revert="false"
-                  includeDirectories="true"
-  	              dummyRun="false"
-   	              verbose="true" >
-   <fileset dir="./runtime/synchronize/upload" includes="**/*" excludes="**/.DSStore" />
-  </s3-synchronize>
+ <target name="list-fileset">
+  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3fileset bucket="provantage-development">
+   	<not>
+   	 <key name="**/*.jar"  />
+    </not>
+   </s3fileset>
+  </s3-list>
  </target>
-			
+	
 </project>
