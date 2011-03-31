@@ -11,17 +11,20 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.types.DataType;
 import org.apache.tools.ant.types.PatternSet;
-import org.apache.tools.ant.types.ResourceCollection;
+import org.apache.tools.ant.types.Reference;
+import org.apache.tools.ant.types.selectors.AndSelector;
 import org.apache.tools.ant.types.selectors.DateSelector;
 import org.apache.tools.ant.types.selectors.FileSelector;
 import org.apache.tools.ant.types.selectors.FilenameSelector;
+import org.apache.tools.ant.types.selectors.NotSelector;
+import org.apache.tools.ant.types.selectors.OrSelector;
 import org.apache.tools.ant.types.selectors.SelectorUtils;
 import org.jets3t.service.S3Service;
 import org.jets3t.service.model.S3Object;
 
 import dak.ant.selectors.S3KeySelector;
 
-public class S3FileSet extends DataType implements ResourceCollection 
+public class S3FileSet extends DataType 
        { // INSTANCE VARIABLES
     
          private String             bucket;
@@ -79,6 +82,51 @@ public class S3FileSet extends DataType implements ResourceCollection
                   return prefix;
                 }
 
+         /** Sets whether an error is thrown if a bucket does not exist. Default value
+           * is <code>true</code>.
+           * 
+           * @param enabled <code>true</code> if missing buckets cause errors.
+           */
+         public void setErrorOnMissingBucket(boolean enabled) 
+                { if (isReference())
+                     throw tooManyAttributes();
+
+                  this.errorOnMissingBucket = enabled;
+                  this.included             = null;
+                }
+
+         /** Returns the 'fail on error' task attribute value, dereferencing it if required.
+           * 
+           */
+         public boolean getErrorOnMissingBucket() 
+                { if (isReference())
+                     return getRef(getProject()).getErrorOnMissingBucket();
+
+                  dieOnCircularReference();
+
+                  return errorOnMissingBucket;
+                }
+
+         // PATTERN ATTRIBUTES
+         
+         /**  Creates a nested patternset.
+          * 
+           * @return <code>PatternSet</code>.
+           */
+         public synchronized PatternSet createPatternSet() 
+                { if (isReference()) 
+                     { throw noChildrenAllowed();
+                     }
+             
+                  PatternSet patterns = new PatternSet();
+             
+                  additionalPatterns.add(patterns);
+
+                  this.included = null;
+             
+                  return patterns;
+                }
+         
          /** Appends <code>includes</code> to the current list of include patterns.
            * <p>
            * Patterns may be separated by a comma or a space.
@@ -126,24 +174,7 @@ public class S3FileSet extends DataType implements ResourceCollection
 
                   return file;
                 }
-
-         /** Sets whether an error is thrown if a bucket does not exist. Default value
-           * is <code>true</code>.
-           * 
-           * @param enabled <code>true</code> if missing buckets cause errors.
-           */
-         public void setErrorOnMissingBucket(boolean enabled) 
-                { if (isReference())
-                     throw tooManyAttributes();
-
-                  this.errorOnMissingBucket = enabled;
-                  this.included             = null;
-                }
-         
-         public boolean isFilesystemOnly() 
-                { return false;
-                }
-         
+    
          // TESTED SELECTORS
 
          public void addFilename(FilenameSelector selector) 
@@ -157,7 +188,20 @@ public class S3FileSet extends DataType implements ResourceCollection
          public void addDate(DateSelector selector) 
                 { appendSelector(selector);
                 }
-         
+
+         public void addAnd(AndSelector selector) 
+                { appendSelector(selector);
+                }
+
+         public void addOr(OrSelector selector) 
+                 { appendSelector(selector);
+                 }
+
+         public void addNot(NotSelector selector) 
+                { appendSelector(selector);
+                }
+
+
          public synchronized void appendSelector(FileSelector selector) 
                 { if (isReference()) 
                      { throw noChildrenAllowed();
@@ -165,19 +209,30 @@ public class S3FileSet extends DataType implements ResourceCollection
                  
                   selectors.add(selector);
                 }
-
+         
          // IMPLEMENTATION
 
+         /** Makes this instance in effect a reference to another instance.
+           *
+           * <p>You must not set another attribute or nest elements inside
+           * this element if you make it a reference.</p>
+           * @param r the <code>Reference</code> to use.
+           * @throws BuildException on error
+           */
          @Override
-         public Iterator<S3File> iterator()
-                { return null;
-                }
+         public void setRefid(Reference r) throws BuildException 
+                { if ((bucket != null) || defaultPatterns.hasPatterns(getProject())) 
+                     throw tooManyAttributes();
+                
+                  if (!additionalPatterns.isEmpty()) 
+                     throw noChildrenAllowed();
 
-         @Override
-         public int size()
-                { return 0;
+                  if (!selectors.isEmpty()) 
+                     throw noChildrenAllowed();
+    
+                  super.setRefid(r);
                 }
-
+         
          public Iterator<S3File> iterator(S3Service service) 
                 { if (isReference()) 
                      return ((S3FileSet) getCheckedRef(getProject())).iterator(service);
@@ -189,7 +244,7 @@ public class S3FileSet extends DataType implements ResourceCollection
 
          public int size(S3Service service) 
                 { if (isReference()) 
-                     return ((S3FileSet) getCheckedRef(getProject())).size();
+                     return ((S3FileSet) getCheckedRef(getProject())).size(service);
 
                   calculateSet(service);
     
@@ -405,21 +460,6 @@ public class S3FileSet extends DataType implements ResourceCollection
 
 //         @Override
 //         public void addSelector(SelectSelector selector) 
-//                { appendSelector(selector);
-//                }
-//
-//         @Override
-//         public void addAnd(AndSelector selector) 
-//                { appendSelector(selector);
-//                }
-//
-//         @Override
-//         public void addOr(OrSelector selector) 
-//                { appendSelector(selector);
-//                }
-//
-//         @Override
-//         public void addNot(NotSelector selector) 
 //                { appendSelector(selector);
 //                }
 //
