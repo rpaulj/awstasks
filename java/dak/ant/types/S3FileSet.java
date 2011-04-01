@@ -16,8 +16,12 @@ import org.apache.tools.ant.types.selectors.AndSelector;
 import org.apache.tools.ant.types.selectors.DateSelector;
 import org.apache.tools.ant.types.selectors.FileSelector;
 import org.apache.tools.ant.types.selectors.FilenameSelector;
+import org.apache.tools.ant.types.selectors.MajoritySelector;
+import org.apache.tools.ant.types.selectors.NoneSelector;
 import org.apache.tools.ant.types.selectors.NotSelector;
 import org.apache.tools.ant.types.selectors.OrSelector;
+import org.apache.tools.ant.types.selectors.PresentSelector;
+import org.apache.tools.ant.types.selectors.SelectSelector;
 import org.apache.tools.ant.types.selectors.SelectorUtils;
 import org.jets3t.service.S3Service;
 import org.jets3t.service.model.S3Object;
@@ -201,6 +205,21 @@ public class S3FileSet extends DataType
                 { appendSelector(selector);
                 }
 
+         public void addNone(NoneSelector selector) 
+                { appendSelector(selector);
+                }
+
+         public void addSelector(SelectSelector selector) 
+                { appendSelector(selector);
+                }
+
+         public void addMajority(MajoritySelector selector) 
+                { appendSelector(selector);
+                }
+
+         public void addPresent(PresentSelector selector) 
+                { appendSelector(selector);
+                }
 
          public synchronized void appendSelector(FileSelector selector) 
                 { if (isReference()) 
@@ -349,10 +368,16 @@ public class S3FileSet extends DataType
                             list = service.listObjects(bucket);
 
                          for (S3Object object: list) 
-                             { String  key      = "./" + object.getKey();   // "./" is required to wildcard match objects in the root of the bucket.
+                             { String  key      = object.getKey(); 
                                boolean selected = false;
                                boolean include  = false;
                                boolean exclude  = false;
+
+                               // ... hack to get wildcard match on objects in the root of the bucket 
+                               //     (e.g. includes="**/xxx.bak" when xxx.bak is in the bucket root)
+                               
+                               if (!key.startsWith(".") && !key.startsWith("/"))
+                                  key = "/" + key;                                  
 
                                for (String pattern: explicit) 
                                    { if (SelectorUtils.match(pattern, key))
@@ -397,7 +422,7 @@ public class S3FileSet extends DataType
                              if (key.startsWith(".") || key.startsWith("/"))
                                 keys[index++] = file.getKey();
                                 else
-                                keys[index++] = "./" + file.getKey();
+                                keys[index++] = "/" + file.getKey();
                            }
                      }
 
@@ -458,21 +483,7 @@ public class S3FileSet extends DataType
          
          // *** UNTESTED SELECTORS ***
 
-//         @Override
-//         public void addSelector(SelectSelector selector) 
-//                { appendSelector(selector);
-//                }
-//
-//         @Override
-//         public void addNone(NoneSelector selector) 
-//                { appendSelector(selector);
-//                }
-//
-//         @Override
-//         public void addMajority(MajoritySelector selector) 
-//                { appendSelector(selector);
-//                }
-//
+
 //         @Override
 //         public void addSize(SizeSelector selector)   
 //                { appendSelector(selector);
@@ -485,11 +496,6 @@ public class S3FileSet extends DataType
 //
 //         @Override
 //         public void addCustom(ExtendSelector selector) 
-//                { appendSelector(selector);
-//                }
-//
-//         @Override
-//         public void addPresent(PresentSelector selector) 
 //                { appendSelector(selector);
 //                }
 //
