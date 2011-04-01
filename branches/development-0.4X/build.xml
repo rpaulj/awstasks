@@ -108,9 +108,7 @@
  <target name="list-fileset">
   <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
    <s3fileset bucket="provantage-development">
-   	<not>
-   	 <key name="**/*.jar"  />
-    </not>
+    <present present="both" targetdir="./runtime/download/includes" />
    </s3fileset>
   </s3-list>
  </target>
