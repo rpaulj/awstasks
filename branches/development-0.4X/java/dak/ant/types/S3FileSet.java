@@ -23,6 +23,7 @@ import org.apache.tools.ant.types.selectors.OrSelector;
 import org.apache.tools.ant.types.selectors.PresentSelector;
 import org.apache.tools.ant.types.selectors.SelectSelector;
 import org.apache.tools.ant.types.selectors.SelectorUtils;
+import org.apache.tools.ant.types.selectors.SizeSelector;
 import org.jets3t.service.S3Service;
 import org.jets3t.service.model.S3Object;
 
@@ -221,6 +222,10 @@ public class S3FileSet extends DataType
                 { appendSelector(selector);
                 }
 
+         public void addSize(SizeSelector selector)   
+                { appendSelector(selector);
+                }
+         
          public synchronized void appendSelector(FileSelector selector) 
                 { if (isReference()) 
                      { throw noChildrenAllowed();
@@ -228,6 +233,28 @@ public class S3FileSet extends DataType
                  
                   selectors.add(selector);
                 }
+         
+         // *** NOT SUPPORTED (YET)
+         
+//       public void addModified(ModifiedSelector selector) 
+//              { throw new BuildException("<modified> selector not supported");
+//              }
+//
+//       public void addContains(ContainsSelector selector) 
+//              { throw new BuildException("<contains> selector not supported");
+//              }
+//
+//       @Override
+//       public void addContainsRegexp(ContainsRegexpSelector selector) 
+//              { throw new BuildException("<containsregexp> selector not supported");
+//              }
+//
+//       @Override
+//       public void addDifferent(DifferentSelector selector) 
+//              { throw new BuildException("<different> selector not supported");
+//              }
+
+
          
          // IMPLEMENTATION
 
@@ -297,7 +324,8 @@ public class S3FileSet extends DataType
                       { Set<S3File> objects = scan(getProject(),service);
                         
                         for (S3File object: objects) 
-                            { if (isSelected(object.getKey(),object)) 
+                            { System.err.println("FILE [" + object.getKey() + "][" + object.lastModified() + "]");
+                              if (isSelected(object.getKey(),object)) 
                                  { included.add(object);
                                  }
                             }
@@ -483,12 +511,6 @@ public class S3FileSet extends DataType
          
          // *** UNTESTED SELECTORS ***
 
-
-//         @Override
-//         public void addSize(SizeSelector selector)   
-//                { appendSelector(selector);
-//                }
-//
 //         @Override
 //         public void addType(TypeSelector selector) 
 //                { appendSelector(selector);
@@ -510,48 +532,8 @@ public class S3FileSet extends DataType
 //                }
 //
 //         @Override
-//         public void addModified(ModifiedSelector selector) 
-//                { appendSelector(selector);
-//                }
-//
-//         @Override
 //         public void add(FileSelector selector) 
 //                { appendSelector(selector);
 //                }
 //
-//         @Override
-//         public void addContains(ContainsSelector selector) 
-//                { // ignore, won't work
-//                }
-//
-//         @Override
-//         public void addContainsRegexp(ContainsRegexpSelector selector) 
-//                { // ignore, won't work
-//                }
-//
-//         @Override
-//         public void addDifferent(DifferentSelector selector) 
-//                { // ignore, won't work
-//                }
-//
-//         @Override
-//         public FileSelector[] getSelectors(Project aProject) 
-//                { return (FileSelector[]) selectors.toArray();
-//                }
-//
-//         @Override
-//         public boolean hasSelectors() 
-//                { return selectors.size() != 0;
-//                }
-//
-//         @Override
-//         public int selectorCount() 
-//                { return selectors.size();
-//                }
-//
-//         @SuppressWarnings({ "rawtypes" })
-//         @Override
-//         public Enumeration selectorElements() 
-//                { return Collections.enumeration(selectors);
-//                }
        }

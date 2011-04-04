@@ -4,6 +4,8 @@ import java.io.File;
 
 import org.jets3t.service.model.S3Object;
 
+import dak.ant.taskdefs.AWSTask;
+
 /**
  * Attempt to make S3 objects compatible with ant file selectors.
  * This could probably be done a lot better. One thing to explore would
@@ -24,10 +26,12 @@ import org.jets3t.service.model.S3Object;
 public class S3File extends File 
        { // INSTANCE VARIABLES
     
-         private String bucket;
-         private String key;
-         private int    hashcode;
-         private long   lastModified;
+         private String  bucket;
+         private String  key;
+         private int     hashcode;
+         private long    lastModified;
+         private long    length;
+         private boolean isDirectory;
    
          // CLASS METHODS
          
@@ -60,6 +64,8 @@ public class S3File extends File
                   this.key          = clean(object.getKey());
                   this.hashcode     = (this.bucket + "/" + this.key).hashCode();
                   this.lastModified = object.getLastModifiedDate().getTime();
+                  this.length       = object.getContentLength();
+                  this.isDirectory  = AWSTask.isDirectory(object);
                 }
 
          // PROPERTIES
@@ -74,9 +80,23 @@ public class S3File extends File
                   this.hashcode = (this.bucket + "/" + this.key).hashCode();
                 }
          
+         public String getBucket()
+                { return bucket;
+                }
+         
+         public String getKey()
+                { return key;
+                }
+
+         // *** File ***
+         
+         /** Only valid if the file has been uploaded with either isDirectoryPlaceHolder set and/or a contentType of 
+           * application/x-directory.
+           *  
+           */
          @Override
          public boolean isDirectory()
-                { return false; // currently no such thing as a directory.
+                { return isDirectory; 
                 }
    
          @Override
@@ -91,12 +111,9 @@ public class S3File extends File
                 { return lastModified;
                 }
          
-         public String getBucket()
-                { return bucket;
-                }
-         
-         public String getKey()
-                { return key;
+         @Override
+         public long length() 
+                { return length;
                 }
 
          // *** Object ***
