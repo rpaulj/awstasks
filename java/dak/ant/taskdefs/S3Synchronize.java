@@ -71,17 +71,17 @@ public class S3Synchronize extends AWSTask
 
          // PROPERTIES
 
-    public void setBucket(String bucket) {
-        this.bucket = bucket;
-    }
+         public void setBucket(String bucket) 
+                { this.bucket = bucket;
+                }
 
-    public void setPrefix(String prefix) {
-        this.prefix = prefix;
-    }
+         public void setPrefix(String prefix) 
+                { this.prefix = prefix;
+                }
 
-    public void setPublicRead(boolean on) {
-        this.publicRead = on;
-    }
+         public void setPublicRead(boolean on) 
+                { this.publicRead = on;
+                }
 
     public void addFileset(FileSet set) {
         filesets.add(set);

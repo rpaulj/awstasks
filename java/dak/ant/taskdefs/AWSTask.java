@@ -2,7 +2,10 @@ package dak.ant.taskdefs;
 
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.Normalizer;
 import java.text.SimpleDateFormat;
@@ -45,6 +48,29 @@ public abstract class AWSTask extends MatchingTask
          protected String  secretKey;
 
          // CLASS METHODS
+
+         /** Returns <code>true</code> if an S3Object is most probably a directory i.e. either isDirectoryPlaceHolder
+           * is set and the content length is zero or the contentType is "application/x-directory".
+          */
+        public static boolean isDirectory(S3Object object) 
+                { // ... directory ?
+
+                  if (object.isMetadataComplete() && (object.getContentLength() == 0) && object.isDirectoryPlaceholder()) 
+                     { return true;
+                     }
+                  
+                  if ("application/x-directory".equals(object.getContentType())) 
+                     { return true;
+                     }
+               
+//                  // ... probably a directory ?
+//                  
+//                  if (!object.isMetadataComplete() && (object.getContentLength() == 0) && !object.isDirectoryPlaceholder()) 
+//                     { return true;
+//                     }
+               
+                  return false;
+                }
 
          /** Ref. http://stackoverflow.com/questions/3610013
            * 
