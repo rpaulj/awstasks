@@ -29,9 +29,10 @@ public class S3File extends File
          private String  bucket;
          private String  key;
          private int     hashcode;
-         private long    lastModified;
-         private long    length;
-         private boolean isDirectory;
+         private long    lastModified = 0;
+         private long    length       = 0;
+         private boolean exists       = false;
+         private boolean isDirectory  = true;
    
          // CLASS METHODS
          
@@ -65,6 +66,7 @@ public class S3File extends File
                   this.hashcode     = (this.bucket + "/" + this.key).hashCode();
                   this.lastModified = object.getLastModifiedDate().getTime();
                   this.length       = object.getContentLength();
+                  this.exists       = true;
                   this.isDirectory  = AWSTask.isDirectory(object);
                 }
 
@@ -114,6 +116,11 @@ public class S3File extends File
          @Override
          public long length() 
                 { return length;
+                }
+         
+         @Override
+         public boolean exists()
+                { return exists;
                 }
 
          // *** Object ***

@@ -107,7 +107,8 @@
 	
  <target name="list-fileset">
   <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
-   <s3fileset bucket="provantage-qa" >
+   <s3fileset bucket="provantage-development" >
+   	<depend targetdir="./runtime/download/all" />
    </s3fileset>
   </s3-list>
  </target>

@@ -14,6 +14,8 @@ import org.apache.tools.ant.types.PatternSet;
 import org.apache.tools.ant.types.Reference;
 import org.apache.tools.ant.types.selectors.AndSelector;
 import org.apache.tools.ant.types.selectors.DateSelector;
+import org.apache.tools.ant.types.selectors.DependSelector;
+import org.apache.tools.ant.types.selectors.DepthSelector;
 import org.apache.tools.ant.types.selectors.FileSelector;
 import org.apache.tools.ant.types.selectors.FilenameSelector;
 import org.apache.tools.ant.types.selectors.MajoritySelector;
@@ -225,14 +227,22 @@ public class S3FileSet extends DataType
          public void addSize(SizeSelector selector)   
                 { appendSelector(selector);
                 }
-         
-         public synchronized void appendSelector(FileSelector selector) 
-                { if (isReference()) 
-                     { throw noChildrenAllowed();
-                     }
-                 
-                  selectors.add(selector);
+
+         public void addDepth(DepthSelector selector) 
+                { appendSelector(selector);
                 }
+
+         public void addDepend(DependSelector selector) 
+                { appendSelector(selector);
+                }
+
+         private synchronized void appendSelector(FileSelector selector) 
+                 { if (isReference()) 
+                      { throw noChildrenAllowed();
+                      }
+                  
+                   selectors.add(selector);
+                 }
          
          // *** NOT SUPPORTED (YET)
          
@@ -253,6 +263,14 @@ public class S3FileSet extends DataType
 //       public void addDifferent(DifferentSelector selector) 
 //              { throw new BuildException("<different> selector not supported");
 //              }
+
+//       -- bit hesitant to enable the generic FileSelector since S3File does not really implement a File.
+//         
+//       @Override
+//       public void add(FileSelector selector) 
+//              { appendSelector(selector);
+//              }
+//
 
 
          
@@ -324,8 +342,7 @@ public class S3FileSet extends DataType
                       { Set<S3File> objects = scan(getProject(),service);
                         
                         for (S3File object: objects) 
-                            { System.err.println("FILE [" + object.getKey() + "][" + object.lastModified() + "]");
-                              if (isSelected(object.getKey(),object)) 
+                            { if (isSelected(object.getKey(),object)) 
                                  { included.add(object);
                                  }
                             }
@@ -520,20 +537,4 @@ public class S3FileSet extends DataType
 //         public void addCustom(ExtendSelector selector) 
 //                { appendSelector(selector);
 //                }
-//
-//         @Override
-//         public void addDepth(DepthSelector selector) 
-//                { appendSelector(selector);
-//                }
-//
-//         @Override
-//         public void addDepend(DependSelector selector) 
-//                { appendSelector(selector);
-//                }
-//
-//         @Override
-//         public void add(FileSelector selector) 
-//                { appendSelector(selector);
-//                }
-//
        }
