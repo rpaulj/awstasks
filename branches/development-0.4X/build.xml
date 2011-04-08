@@ -108,9 +108,13 @@
  <target name="list-fileset">
   <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
    <s3fileset bucket="provantage-development" >
-   	<depend targetdir="./runtime/download/all" />
+   	<custom classpath="${awstasks.classes}" classname="dak.ant.selectors.S3KeySelector">
+     <param name="regex" value="osgi"/>
+   	</custom>
    </s3fileset>
   </s3-list>
  </target>
-	
+<!--
+   	<depend targetdir="./runtime/download/all" />
+-->
 </project>
