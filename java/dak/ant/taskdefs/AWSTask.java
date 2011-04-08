@@ -63,11 +63,11 @@ public abstract class AWSTask extends MatchingTask
                      { return true;
                      }
                
-//                  // ... probably a directory ?
-//                  
-//                  if (!object.isMetadataComplete() && (object.getContentLength() == 0) && !object.isDirectoryPlaceholder()) 
-//                     { return true;
-//                     }
+                  // ... probably a directory ?
+                  //
+                  //if (!object.isMetadataComplete() && (object.getContentLength() == 0) && !object.isDirectoryPlaceholder()) 
+                  //   { return true;
+                  //   }
                
                   return false;
                 }

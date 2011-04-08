@@ -13,8 +13,8 @@ import org.apache.tools.ant.util.regexp.RegexpMatcher;
 /** Selector that filters S3 objects based on the key. 
   * <p>
   * Basically copied from Ant's FilenameSelector to provide a regular expression selector
-  * for S3 objects for Eclipse users since Eclipse ships with Ant 1.7 and the regex 
-  * implementation for FilenameSelector is only available starting with Ant 1.8.
+  * for S3 objects for Eclipse users (since Eclipse ships with Ant 1.7 and the regex 
+  * implementation for FilenameSelector is only available starting with Ant 1.8).
   * 
   * @author Tony Seebregts
   */
@@ -42,7 +42,7 @@ public class S3KeySelector extends BaseExtendSelector
            *
            */
          public S3KeySelector() 
-                {
+                { 
                 }
 
 
@@ -158,8 +158,9 @@ public class S3KeySelector extends BaseExtendSelector
 
          // *** Object ***
     
-         /**
-           * @return a string describing this object
+         /** Returns a human readable selector description.
+           * 
+           * @return { keyselector name:(pattern|regex) [negate] [casesensitive] }
            */
          @Override
          public String toString() 

@@ -16,6 +16,7 @@ import org.apache.tools.ant.types.selectors.AndSelector;
 import org.apache.tools.ant.types.selectors.DateSelector;
 import org.apache.tools.ant.types.selectors.DependSelector;
 import org.apache.tools.ant.types.selectors.DepthSelector;
+import org.apache.tools.ant.types.selectors.ExtendSelector;
 import org.apache.tools.ant.types.selectors.FileSelector;
 import org.apache.tools.ant.types.selectors.FilenameSelector;
 import org.apache.tools.ant.types.selectors.MajoritySelector;
@@ -31,6 +32,38 @@ import org.jets3t.service.model.S3Object;
 
 import dak.ant.selectors.S3KeySelector;
 
+/** Ant fileset look-alike for S3 object sets. 
+  * <p>
+  * Based on Chris Stewart's original implementation but with the ResourceCollection and SelectorContainer 
+  * interfaces removed as being too liberal with the current S3File implementation.
+  * <p>
+  * Supports:
+  * <ul>
+  * <li> includes/excludes
+  * <li> nested patternset's
+  * <li> nested S3File's
+  * <li> and the following Ant selectors:
+  *      <ul>
+  *      <li> filename
+  *      <li> S3Key
+  *      <li> date
+  *      <li> and
+  *      <li> or
+  *      <li> not
+  *      <li> none
+  *      <li> select
+  *      <li> majority
+  *      <li> present
+  *      <li> size
+  *      <li> depth
+  *      <li> depend
+  *      <li> custom (use with caution)
+  *      </ul>
+  * </ul>
+  * 
+  * @author Tony Seebregts
+  *
+  */
 public class S3FileSet extends DataType 
        { // INSTANCE VARIABLES
     
@@ -46,6 +79,10 @@ public class S3FileSet extends DataType
 
          // TASK ATTRIBUTES
     
+         /** Sets the S3 bucket for this fileset and any nested S3File selectors.
+           * 
+           * @param bucket S3 bucket name.
+           */
          public void setBucket(String bucket) 
                 { if (isReference())
                     throw tooManyAttributes();
@@ -59,6 +96,7 @@ public class S3FileSet extends DataType
 
          /** Returns the S3 bucket attribute, dereferencing it if required.
            * 
+           * @return S3 bucket name.
            */
          public String getBucket() 
                 { if (isReference())
@@ -69,6 +107,10 @@ public class S3FileSet extends DataType
                   return bucket;
                 }
          
+         /** Sets the prefix to use inside an S3 bucket.
+           * 
+           * @param bucket S3 bucket name.
+           */
          public void setPrefix(String prefix) 
                 { if (isReference())
                     throw tooManyAttributes();
@@ -116,8 +158,8 @@ public class S3FileSet extends DataType
 
          // PATTERN ATTRIBUTES
          
-         /**  Creates a nested patternset.
-          * 
+         /**  Creates a nested &lt;patternset&gt;.
+           * 
            * @return <code>PatternSet</code>.
            */
          public synchronized PatternSet createPatternSet() 
@@ -164,7 +206,6 @@ public class S3FileSet extends DataType
                   this.included = null;
                 }
 
-
          /** create&lt;Type&gt; implementation for an included <code>S3File</code>.
            * 
            */
@@ -184,58 +225,111 @@ public class S3FileSet extends DataType
     
          // TESTED SELECTORS
 
+         /** Adds a nested &lt;filename&gt; selector.
+           * 
+           */
          public void addFilename(FilenameSelector selector) 
                 { appendSelector(selector);
                 }
 
+         /** Adds a nested &lt;S3Key&gt; selector.
+           * 
+           */
          public void addKey(S3KeySelector selector) 
                 { appendSelector(selector);
                 }
 
+         /** Adds a nested &lt;date&gt; selector.
+           * 
+           */
          public void addDate(DateSelector selector) 
                 { appendSelector(selector);
                 }
 
+         /** Adds a nested &lt;and&gt; selector.
+           * 
+           */
          public void addAnd(AndSelector selector) 
                 { appendSelector(selector);
                 }
 
+         /** Adds a nested &lt;or&gt; selector.
+           * 
+           */
          public void addOr(OrSelector selector) 
                  { appendSelector(selector);
                  }
 
+         /** Adds a nested &lt;not&gt; selector.
+           * 
+           */
          public void addNot(NotSelector selector) 
                 { appendSelector(selector);
                 }
 
+         /** Adds a nested &lt;none&gt; selector.
+           * 
+           */
          public void addNone(NoneSelector selector) 
                 { appendSelector(selector);
                 }
 
+         /** Adds a nested &lt;select&gt; selector.
+           * 
+           */
          public void addSelector(SelectSelector selector) 
                 { appendSelector(selector);
                 }
 
+         /** Adds a nested &lt;majority&gt; selector.
+           * 
+           */
          public void addMajority(MajoritySelector selector) 
                 { appendSelector(selector);
                 }
 
+         /** Adds a nested &lt;present&gt; selector.
+           * 
+           */
          public void addPresent(PresentSelector selector) 
                 { appendSelector(selector);
                 }
 
+         /** Adds a nested &lt;size&gt; selector.
+           * 
+           */
          public void addSize(SizeSelector selector)   
                 { appendSelector(selector);
                 }
 
+         /** Adds a nested &lt;depth&gt; selector.
+           * 
+           */
          public void addDepth(DepthSelector selector) 
                 { appendSelector(selector);
                 }
 
+         /** Adds a nested &lt;depend&gt; selector.
+           * 
+           */
          public void addDepend(DependSelector selector) 
                 { appendSelector(selector);
                 }
-
+         
+         /** Adds a nested &lt;custom&gt; selector.
+           * <p>
+           * Use with caution: an S3Object is not a 'proper' file.
+           * 
+           * @param selector ExtendSelector implementation.
+           */
+         public void addCustom(ExtendSelector selector) 
+                { appendSelector(selector);
+                }
+         
+ 
+         /** Adds a FileSelector implementation the internal selector list..
+           * 
+           */
          private synchronized void appendSelector(FileSelector selector) 
                  { if (isReference()) 
                       { throw noChildrenAllowed();
@@ -244,8 +338,25 @@ public class S3FileSet extends DataType
                    selectors.add(selector);
                  }
          
-         // *** NOT SUPPORTED (YET)
+        // *** NOT SUPPORTED (YET)
+       
+//       TS: bit hesitant to enable the generic FileSelector since S3File does not really implement a File.
+//       
+//       @Override
+//       public void add(FileSelector selector) 
+//              { appendSelector(selector);
+//              }
+//
+
+//       TS: getting 'false negatives' on directories uploaded with older versions of jets3t.
+//     
+//       public void addType(TypeSelector selector) 
+//              { appendSelector(selector);
+//              }
+//
          
+//       TS: require being able to read an S3 file (not implemented).
+//       
 //       public void addModified(ModifiedSelector selector) 
 //              { throw new BuildException("<modified> selector not supported");
 //              }
@@ -254,33 +365,22 @@ public class S3FileSet extends DataType
 //              { throw new BuildException("<contains> selector not supported");
 //              }
 //
-//       @Override
 //       public void addContainsRegexp(ContainsRegexpSelector selector) 
 //              { throw new BuildException("<containsregexp> selector not supported");
 //              }
 //
-//       @Override
 //       public void addDifferent(DifferentSelector selector) 
 //              { throw new BuildException("<different> selector not supported");
 //              }
-
-//       -- bit hesitant to enable the generic FileSelector since S3File does not really implement a File.
-//         
-//       @Override
-//       public void add(FileSelector selector) 
-//              { appendSelector(selector);
-//              }
-//
-
-
          
          // IMPLEMENTATION
 
          /** Makes this instance in effect a reference to another instance.
-           *
-           * <p>You must not set another attribute or nest elements inside
-           * this element if you make it a reference.</p>
-           * @param r the <code>Reference</code> to use.
+           * <p>
+           * You must not set another attribute or nest elements inside this element if you make it a reference.</p>
+           * 
+           * @param  r the <code>Reference</code> to use.
+           * 
            * @throws BuildException on error
            */
          @Override
@@ -297,6 +397,14 @@ public class S3FileSet extends DataType
                   super.setRefid(r);
                 }
          
+
+         /** ResourceCollection-like <code>iterator</code> implementation. Scans the S3 bucket to find matching objects and returns
+           * an iterator for the resulting list.
+           * 
+           * @param service Initialised service to use for access to S3.
+           * 
+           * @throws BuildException on error
+           */
          public Iterator<S3File> iterator(S3Service service) 
                 { if (isReference()) 
                      return ((S3FileSet) getCheckedRef(getProject())).iterator(service);
@@ -306,6 +414,13 @@ public class S3FileSet extends DataType
                   return included.iterator();
                 }
 
+         /** ResourceCollection-like <code>size</code> implementation. Scans the S3 bucket to find matching objects and returns
+           * the size of the resulting list.
+           * 
+           * @param service Initialised service to use for access to S3.
+           * 
+           * @throws BuildException on error
+           */
          public int size(S3Service service) 
                 { if (isReference()) 
                      return ((S3FileSet) getCheckedRef(getProject())).size(service);
@@ -323,6 +438,12 @@ public class S3FileSet extends DataType
                  { return (S3FileSet) getCheckedRef(project);
                  }
 
+         /** Scans the S3 bucket and then filters the object list using the includes and excludes patterns followed
+           * by the selector filters.
+           * 
+           * @param service Initialised service to use for access to S3.
+           * 
+           */
          private synchronized void calculateSet(S3Service service) 
                  { checkParameters();
 
@@ -355,11 +476,18 @@ public class S3FileSet extends DataType
                       }
                  }
 
+         /** Throws a BuildException if the <code>bucket</code> attribute has not been set.
+           * 
+           */
          private void checkParameters() throws BuildException 
                  { if (bucket == null)
                       throw new BuildException("Missing 'bucket' attribute");
                  }
 
+         /** Matches an S3 object against the selector list. Returns <code>true</code> unless the 
+           * selector list explicitly excludes it.
+           * 
+           */
          private boolean isSelected(String name,S3File file)
                  { File basedir = new File("");
 
@@ -372,6 +500,13 @@ public class S3FileSet extends DataType
                    return true;
                  }
                  
+         /** Retrieves the object list from the S3 bucket and matches it against the include/exclude patterns.
+           * 
+           * @param project  Current Ant project. Used to dereference <code>reference</code> objects.
+           * @param service Initialised service to use for access to S3.
+           *
+           * @return Set of S3File that matches the include/excude list.
+           */
          private Set<S3File> scan(Project project,S3Service service) 
                  { Set<S3File> included = new ConcurrentSkipListSet<S3File>();
 
@@ -512,7 +647,7 @@ public class S3FileSet extends DataType
                    return string;
                  }
    
-         /** Get the merged patterns for this objectset.
+         /** Merges the default and additional patternset's for this fileset.
            * 
            */
          public synchronized PatternSet mergePatterns(Project project) 
@@ -524,17 +659,4 @@ public class S3FileSet extends DataType
 
                   return ps;
                 }
-         
-         
-         // *** UNTESTED SELECTORS ***
-
-//         @Override
-//         public void addType(TypeSelector selector) 
-//                { appendSelector(selector);
-//                }
-//
-//         @Override
-//         public void addCustom(ExtendSelector selector) 
-//                { appendSelector(selector);
-//                }
        }
