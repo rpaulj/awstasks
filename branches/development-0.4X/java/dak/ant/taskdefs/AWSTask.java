@@ -220,14 +220,14 @@ public abstract class AWSTask extends MatchingTask
                           object.addMetadata("Cache-Control", "public, max-age=" + MAX_AGE);
                         }
 
-                     object.addMetadata(Constants.METADATA_JETS3T_LOCAL_FILE_DATE,ServiceUtils.formatIso8601Date(new Date(file.lastModified())));
+                     object.addMetadata     (Constants.METADATA_JETS3T_LOCAL_FILE_DATE,ServiceUtils.formatIso8601Date(new Date(file.lastModified())));
                      object.setContentLength(file.length());
                      object.setContentType  (contentType);
 
                      if (file.isFile() && file.exists())
-                        object.setDataInputFile(file);
-
-                     s3.putObject(bucket, object);
+                        { object.setDataInputFile(file);
+                          s3.putObject(bucket, object);
+                        }
                    }
 
        }
