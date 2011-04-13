@@ -2,10 +2,7 @@ package dak.ant.taskdefs;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.text.DateFormat;
 import java.text.Normalizer;
 import java.text.SimpleDateFormat;
@@ -72,7 +69,9 @@ public abstract class AWSTask extends MatchingTask
                   return false;
                 }
 
-         /** Ref. http://stackoverflow.com/questions/3610013
+         /** Normalises a Unicode string.
+           * 
+           * Ref. http://stackoverflow.com/questions/3610013
            * 
            */
          protected static String normalize(String string) 
@@ -96,18 +95,32 @@ public abstract class AWSTask extends MatchingTask
 
          // PROPERTIES
 
+         /** Sets required task AWS access ID attribute.
+           * 
+           */
          public void setAccessId(String accessId) 
                 { this.accessId = accessId;
                 }
 
+         /** Sets required task AWS secret key attribute.
+           * 
+           */
          public void setSecretKey(String secretKey) 
                 { this.secretKey = secretKey;
                 }
 
+         /** Task attribute to enable/disable verbose logging.
+           * 
+           */
          public void setVerbose(boolean verbose) 
                 { this.verbose = verbose;
                 }
 
+         /** Task attribute to enable/disable failing on error. If <code>false</code> a task
+           * will log a warning and attempt to continue uploading/downloading the remaining 
+           * files.
+           * 
+           */
          public void setFailOnError(boolean failOnError)  
                 { this.failOnError = failOnError;
                 }

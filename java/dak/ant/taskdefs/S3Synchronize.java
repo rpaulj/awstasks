@@ -66,53 +66,95 @@ public class S3Synchronize extends AWSTask
          private DIRECTION direction;
          private boolean   includeDirectories = true;
          private boolean   dummyRun = false;
-         private boolean   delete   = true;
-         private boolean   revert   = true;
+         private boolean   delete   = false;
+         private boolean   revert   = false;
 
          // PROPERTIES
 
+         /** Required task attribute - sets the S3 bucket with which to synchronize 
+           * a local folder.
+           *  
+           */
          public void setBucket(String bucket) 
                 { this.bucket = bucket;
                 }
 
+         /** Optional task attribute to set a prefix ('folder equivalent') within the S3 bucket. 
+           * The default prefix is "".
+           *  
+           */
          public void setPrefix(String prefix) 
                 { this.prefix = prefix;
                 }
 
-         public void setPublicRead(boolean on) 
-                { this.publicRead = on;
+         /** Sets the synchronisation direction.
+           * 
+           * @param direction "upload" or "download".
+           */
+         public void setDirection(String direction)  
+                { this.direction = DIRECTION.parse(direction);
                 }
 
-    public void addFileset(FileSet set) {
-        filesets.add(set);
-    }
-
-    public void setCacheNeverExpires(boolean cacheNeverExpires) {
-        this.cacheNeverExpires = cacheNeverExpires;
-    }
-
-    public void setMimeTypesFile(String mimeTypesFile) {
-        this.mimeTypesFile = mimeTypesFile;
-    }
-
-    public void setIncludeDirectories(boolean enabled) {
-        this.includeDirectories = enabled;
-    }
-
-    public void setDirection(String direction) {
-        this.direction = DIRECTION.parse(direction);
-    }
-
-         public void setDummyRun(boolean enabled) 
-                { this.dummyRun = enabled;
-                }
-
+         /** Deletes files in the destination that do not have an equivalent source object if <code>true</code>. 
+           * Default value is <code>false</code>.
+           * 
+           * @param direction "upload" or "download".
+           */
          public void setDelete(boolean enabled) 
                 { this.delete = enabled;
                 }
 
+         /** Overwrites files in the destination that are newer than the equivalent source object if <code>true</code>. 
+           * Default value is <code>false</code>.
+           * 
+           * @param direction "upload" or "download".
+           */
          public void setRevert(boolean enabled) 
                 { this.revert = enabled;
+                }
+
+         /** Sets the include pattern for the local directory.
+           * 
+           * @param enabled
+           */
+         public void setIncludeDirectories(boolean enabled) 
+                { this.includeDirectories = enabled;
+                }
+
+         /** Create method for nested Ant filesets that specify the local directory for synchronisation.
+           *  
+           */
+         public void addFileset(FileSet set) 
+                { filesets.add(set);
+                }
+
+         /** Sets the access for uploaded S3 objects to 'public read-only'. The default value is <code>false</code> i.e. private.
+           * 
+           */
+         public void setPublicRead(boolean on) 
+                { this.publicRead = on;
+                }
+
+         /** Sets the cache expiry meta-data for uploaded S3 objects to '1 year'.
+           * 
+           */
+         public void setCacheNeverExpires(boolean cacheNeverExpires) 
+                { this.cacheNeverExpires = cacheNeverExpires;
+                }
+
+         /** Sets the MIME types file from which to get the Content-Type meta-data for uploaded S3 objects.
+           * 
+           */
+         public void setMimeTypesFile(String mimeTypesFile) 
+                { this.mimeTypesFile = mimeTypesFile;
+                }
+
+         /** Task attribute to execute the synchronize  as a 'dummy run' to verify that it will do 
+           * what is intended. 
+           * 
+           */
+         public void setDummyRun(boolean enabled) 
+                { this.dummyRun = enabled;
                 }
 
          // IMPLEMENTATION
@@ -129,7 +171,7 @@ public class S3Synchronize extends AWSTask
                    { super.checkParameters();
 
                      if (direction == null) 
-                        { throw new BuildException("Invalid SYNCHRONIZE direction. Valid values are 'upload' or 'download'");
+                        { throw new BuildException("Invalid 'synchronize' direction. Valid values are 'upload' or 'download'");
                         }
 
                      if (filesets == null) 
@@ -138,78 +180,88 @@ public class S3Synchronize extends AWSTask
                         }
                    }
 
-         /**
-          * Validates the parameters and then synchronizes the S3 and file specified
-          * in the filesets.
-          * 
-          * @throws BuildException
-          *             Thrown if the parameters are invalid or the synchronize
-          *             failed.
-          */
+         /** Validates the parameters and then synchronizes the S3 and file specified
+           * in the filesets.
+           * 
+           * @throws BuildException Thrown if the parameters are invalid or the synchronize failed.
+           */
          @Override
-         public void execute() throws BuildException {
-             checkParameters();
+         public void execute() throws BuildException 
+                { checkParameters();
 
-             try { // ... initialise
+                  try
+                     { // ... initialise
 
-                 AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
-                 RestS3Service s3 = new RestS3Service(credentials);
-                 S3Bucket bucket = new S3Bucket(this.bucket);
+                       AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
+                       RestS3Service  s3          = new RestS3Service(credentials);
+                       S3Bucket       bucket      = new S3Bucket(this.bucket);
 
-                 if (publicRead) {
-                     acl = s3.getBucketAcl(bucket);
-                     acl.grantPermission(GroupGrantee.ALL_USERS,
-                             Permission.PERMISSION_READ);
-                 }
+                       if (publicRead) 
+                          { acl = s3.getBucketAcl(bucket);
+                            acl.grantPermission(GroupGrantee.ALL_USERS,Permission.PERMISSION_READ);
+                          }
 
-                 if (mimeTypesFile != null)
-                     mimeTypesMap = new MimetypesFileTypeMap(mimeTypesFile);
-                 else
-                     mimeTypesMap = new MimetypesFileTypeMap();
+                       if (mimeTypesFile != null)
+                          mimeTypesMap = new MimetypesFileTypeMap(mimeTypesFile);
+                          else 
+                          mimeTypesMap = new MimetypesFileTypeMap();
 
-                 // ... synchronise directory
+                       // ... synchronise directory
 
-                 try {
-                     for (FileSet fs : filesets) {
-                         DirectoryScanner ds = fs.getDirectoryScanner(getProject());
-                         File root = fs.getDir(getProject());
-                         String[] subdirs = ds.getIncludedDirectories();
-                         String[] files = ds.getIncludedFiles();
-                         List<File> list = new ArrayList<File>();
+                       try
+                          { for (FileSet fs : filesets) 
+                                { DirectoryScanner ds      = fs.getDirectoryScanner(getProject());
+                                  File             root    = fs.getDir(getProject());
+                                  String[]         subdirs = ds.getIncludedDirectories();
+                                  String[]         files   = ds.getIncludedFiles();
+                                  List<File>       list    = new ArrayList<File>();
 
-                         if (includeDirectories) {
-                             for (String dir : subdirs) {
-                                 list.add(new File(root, dir));
-                             }
-                         }
+                                  if (includeDirectories) 
+                                     { for (String dir: subdirs) 
+                                           { list.add(new File(root, dir));
+                                           }
+                                     }
 
-                         for (String file : files) {
-                             list.add(new File(root, file));
-                         }
+                                  for (String file: files) 
+                                      { list.add(new File(root, file));
+                                      }
 
-                         switch (direction) {
-                         case UPLOAD:
-                             upload(s3, bucket, root, list.toArray(new File[0]));
-                             break;
+                                  switch (direction) 
+                                         { case UPLOAD:
+                                                upload(s3, bucket, root, list.toArray(new File[0]));
+                                                break;
 
-                         case DOWNLOAD:
-                             download(s3, bucket, root, list.toArray(new File[0]));
-                             break;
-                         }
+                                           case DOWNLOAD:
+                                                download(s3, bucket, root, list.toArray(new File[0]));
+                                                break;
+                                         }
+                                }
+
+                          } 
+                       catch (BuildException x) 
+                          { if (failOnError)
+                               throw x;
+
+                            log("Error synchronizing files with Amazon S3 [" + x.getMessage() + "]", LogLevel.ERR.getLevel());
+                          }
+                     } 
+                  catch (BuildException x) 
+                     { throw x;
                      }
+                  catch (Exception x) 
+                     { throw new BuildException(x);
+                     }
+                }
 
-                 } catch (BuildException x) {
-                     if (failOnError)
-                         throw x;
-
-                     log("Error synchronizing files with Amazon S3 ["
-                             + x.getMessage() + "]", LogLevel.ERR.getLevel());
-                 }
-             } catch (Exception x) {
-                 throw new BuildException(x);
-             }
-         }
-
+         /** Utility method to upload a list of files from a directory.
+           * 
+           * @param service  Initialise S3 service.
+           * @param bucket   Destination bucket. Created automatically if required.
+           * @param root     'root' directory for file list. Used to match against S3 object list.
+           * @param list     List of files to upload.
+           * 
+           * @throws Exception Thrown if a file in the list could not be uploaded and 'failOnError' is set.
+           */
          private void upload(RestS3Service service,S3Bucket bucket,File root,File[] list) throws Exception
                  { // ... create bucket if necessary
 
@@ -278,6 +330,15 @@ public class S3Synchronize extends AWSTask
                        }
                  }
 
+         /** Utility method to download a list of files to a directory.
+           * 
+           * @param service  Initialises S3 service.
+           * @param bucket   Source bucket.
+           * @param root     'root' directory for file list. Used to match against S3 object list.
+           * @param list     List of files to download.
+           * 
+           * @throws Exception Thrown if a file in the list could not be uploaded and 'failOnError' is set.
+           */
          private void download(RestS3Service service,S3Bucket bucket,File root,File[] list) throws Exception 
                  { // ... build change list
 

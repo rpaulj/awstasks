@@ -27,15 +27,15 @@ import dak.ant.types.S3FileSet;
 public class S3Delete extends AWSTask 
        { // INSTANCE VARIABLES
 
-         private boolean          dummyRun = false;
+         private boolean         dummyRun = false;
          private List<S3FileSet> filesets = new ArrayList<S3FileSet>  ();
 
          // PROPERTIES
-
-         public void setDummyRun(boolean enabled)
-                { this.dummyRun = enabled;
-                }
          
+         /** Create method for nested S3 filesets.
+           * 
+           * @return Initialised S3Fileset that has been added to the internal list of filesets.
+           */
          public S3FileSet createS3FileSet() 
                 { S3FileSet fileset = new S3FileSet();
 
@@ -44,8 +44,19 @@ public class S3Delete extends AWSTask
                   return fileset;
                 }
 
+         /** Task attribute to execute the delete  as a 'dummy run' to verify that it will do 
+           * what is intended. 
+           * 
+           */
+         public void setDummyRun(boolean enabled)
+                { this.dummyRun = enabled;
+                }
+
          // IMPLEMENTATION
 
+         /** Deletes all the S3 objects that match the nested S3filesets.
+           *   
+           */
          @Override
          public void execute() throws BuildException 
                 { checkParameters();

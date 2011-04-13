@@ -64,8 +64,7 @@ public class S3Download extends AWSTask
            *               directory
            * </ul>
            * 
-           * @param options
-           *            Comma separated list of download options. Defaults to 'all'.
+           * @param options Comma separated list of download options. Defaults to 'all'.
            */
          public void setDownload(String options) 
                 { if (options == null)
@@ -85,14 +84,23 @@ public class S3Download extends AWSTask
                       }
                 }
 
-         public S3FileSet createFileSet() 
-                { S3FileSet fileset = new S3FileSet();
+//         /** Create method for nested S3 filesets. Identical to createS3Fileset but allows the use of
+//           * &ltfileset&gt; when using as an antlib.
+//           * 
+//           * @return Initialised S3Fileset that has been added to the internal list of filesets.
+//           */
+//         public S3FileSet createFileSet() 
+//                { S3FileSet fileset = new S3FileSet();
+//
+//                  filesets.add(fileset);
+//
+//                  return fileset;
+//                }
 
-                  filesets.add(fileset);
-
-                  return fileset;
-                }
-
+         /** Create method for nested S3 filesets.
+           * 
+           * @return Initialised S3Fileset that has been added to the internal list of filesets.
+           */
          public S3FileSet createS3FileSet() 
                 { S3FileSet fileset = new S3FileSet();
 
@@ -101,14 +109,18 @@ public class S3Download extends AWSTask
                   return fileset;
                 }
          
+         /** Task attribute to execute the copy as a 'dummy run' to verify that it will do 
+           * what is intended. 
+           * 
+           */
          public void setDummyRun(boolean enabled)
                 { this.dummyRun = enabled;
                 }
 
          // IMPLEMENTATION
 
-         /** Checks that the AWS credentials have been set and warns if the file list
-           * is empty.
+         /** Checks that the AWS credentials and destination directory have been initialised, and 
+           * warns if the file list is empty.
            * 
            * @since Ant 1.5
            * @exception BuildException thrown if an error occurs
@@ -126,6 +138,11 @@ public class S3Download extends AWSTask
                         }
                    }
 
+         /** Downloads all S3 objects that match the nested S3Filesets to the destination directory. 
+           * <p>
+           * The destination directory and subdirectories are created automatically if necessary.
+           * 
+           */
          // TODO: optimise to avoid scanning an S3 bucket twice when downloading new/changed files.
          public void execute() throws BuildException 
                 { checkParameters();
@@ -196,6 +213,14 @@ public class S3Download extends AWSTask
                      }
                 }
 
+         /** Utility method to download a single S3 object.
+           * 
+           * @param service   Initialised S3 service.
+           * @param file      S3 object to download.
+           * @param dir       Destination 'root' directory.
+           * 
+           * @throws Exception Thrown if the object could not be downloaded or stored.
+           */
          private void fetch(RestS3Service service,S3File file,File dir) throws Exception 
                  { File _file = new File(dir,file.getKey());
 
