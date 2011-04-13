@@ -38,18 +38,33 @@ public class S3List extends AWSTask
 
          // PROPERTIES
 
+         /** Optional task attribute to direct the listing to a file.
+           * 
+           */
          public void setOutFile(String outfile) 
                 { this.outfile = outfile;
                 }
 
+         /** Optional Java format string for each row of the listing. The default format string is "%s::%s"
+           * which prints each row out in the format &lt;bucket&gt;::&lt;key&gt;.
+           *  
+           */
          public void setFormat(String format) 
                 { this.format = format;
                 }
 
+         /** Appends the listing to an existing file if <code>true</code>. The default value is <code>false</code> i.e. 
+           * overwrite any existing file.
+           *  
+           */
          public void setAppend(boolean append) 
                 { this.append = append;
                 }
 
+         /** Create method for nested S3 filesets.
+           * 
+           * @return Initialised S3Fileset that has been added to the internal list of filesets.
+           */
          public S3FileSet createS3FileSet() 
                 { S3FileSet fileset = new S3FileSet();
 
@@ -60,6 +75,9 @@ public class S3List extends AWSTask
 
          // IMPLEMENTATION
 
+         /** Retrieves the bucket and object keys for all S3 objects that match the nested filesets and prints
+           * the listing to the console (or optionally a file). 
+           */
          @Override
          public void execute() throws BuildException 
                 { checkParameters();
@@ -128,5 +146,4 @@ public class S3List extends AWSTask
                      { close(writer);
                      }
                 }
-
        }

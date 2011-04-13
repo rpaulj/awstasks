@@ -32,16 +32,23 @@ import dak.ant.types.S3FileSet;
 public class S3Copy extends AWSTask 
        { // INSTANCE VARIABLES
     
-         private String           bucket;
+         private String          bucket;
          private List<S3FileSet> filesets = new ArrayList<S3FileSet>();
-         private boolean          dummyRun = false;
+         private boolean         dummyRun = false;
 
          // PROPERTIES
 
+         /** Sets the destination S3 bucket.
+           * 
+           */
          public void setBucket(String bucket)  
                 { this.bucket = bucket;
                 }
 
+         /** Create method for nested S3 filesets.
+           * 
+           * @return Initialised S3Fileset that has been added to the internal list of filesets.
+           */
          public S3FileSet createS3FileSet() 
                 { S3FileSet fileset = new S3FileSet();
 
@@ -50,12 +57,32 @@ public class S3Copy extends AWSTask
                   return fileset;
                 }
          
+         /** Task attribute to execute the copy as a 'dummy run' to verify that it will do 
+           * what is intended. 
+           * 
+           */
          public void setDummyRun(boolean enabled)
                 { this.dummyRun = enabled;
                 }
 
          // IMPLEMENTATION
 
+         /** Checks that the AWS credentials and the destination bucket have been initialised.
+           * 
+           */
+         @Override
+         protected void checkParameters() throws BuildException 
+                   { super.checkParameters();
+                 
+                     if (bucket == null)
+                        { throw new BuildException("'bucket' task attribute must be set");
+                        }
+                   }
+
+         /** Copies the S3 objects in the filesets across to the task 'bucket' attribute. 
+           * <p>
+           * The destination bucket is created if it does not already exist.
+           */
          @Override
          public void execute() throws BuildException 
                 { checkParameters();
@@ -115,13 +142,4 @@ public class S3Copy extends AWSTask
                      { throw new BuildException(x);
                      }
                 }
-
-         @Override
-         protected void checkParameters() throws BuildException 
-                   { super.checkParameters();
-                 
-                     if (bucket == null)
-                        { throw new BuildException("'bucket' task attribute must be set");
-                        }
-                   }
        }
