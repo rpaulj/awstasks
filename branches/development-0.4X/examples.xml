@@ -5,7 +5,7 @@
  <property name="awstasks.classes" value="${basedir}/build/classes"/>
  <property name="awstasks.lib"     value="${basedir}/lib"/>
 	 
- <property name="examples.credentials" value="../../dist/aws.properties" />
+ <property name="examples.credentials" value="../../dist/awstasks.properties" />
  <property name="examples.bucket"      value="awstasks-test"             />
  <property name="examples.bucket.copy" value="awstasks-test-copy"        />
  <property name="examples.dir"         value="${basedir}/runtime"        />
@@ -17,85 +17,83 @@
   <pathelement location="${awstasks.classes}" />
  </path>
 
- <taskdef name="s3-list" classname="dak.ant.taskdefs.S3List">
+ <taskdef name="S3list" classname="dak.ant.taskdefs.S3List">
   <classpath refid="classpath.compile"/>
  </taskdef>
 
- <taskdef name="s3-copy" classname="dak.ant.taskdefs.S3Copy">
+ <taskdef name="S3copy" classname="dak.ant.taskdefs.S3Copy">
   <classpath refid="classpath.compile"/>
  </taskdef>
 
- <taskdef name="s3-upload" classname="dak.ant.taskdefs.S3Upload">
+ <taskdef name="S3upload" classname="dak.ant.taskdefs.S3Upload">
   <classpath refid="classpath.compile"/>
  </taskdef>
 	
- <taskdef name="s3-download" classname="dak.ant.taskdefs.S3Download">
+ <taskdef name="S3download" classname="dak.ant.taskdefs.S3Download">
   <classpath refid="classpath.compile"/>
  </taskdef>
 
- <taskdef name="s3-synchronize" classname="dak.ant.taskdefs.S3Synchronize">
+ <taskdef name="S3synchronize" classname="dak.ant.taskdefs.S3Synchronize">
   <classpath refid="classpath.compile" />
  </taskdef>
 	
- <taskdef name="s3-delete" classname="dak.ant.taskdefs.S3Delete">
+ <taskdef name="S3delete" classname="dak.ant.taskdefs.S3Delete">
   <classpath refid="classpath.compile"/>
  </taskdef>
 	
- <typedef name="S3Fileset" classname="dak.ant.types.S3FileSet">
+ <typedef name="S3fileset" classname="dak.ant.types.S3FileSet">
   <classpath refid="classpath.compile"/>
  </typedef>
 
- <typedef name="S3File" classname="dak.ant.types.S3File">
+ <typedef name="S3file" classname="dak.ant.types.S3File">
   <classpath refid="classpath.compile"/>
  </typedef>
 
  <typedef name="key" classname="dak.ant.selectors.S3KeySelector">
   <classpath refid="classpath.compile"/>
  </typedef>
-			
- <typedef name="objectset" classname="dak.ant.types.S3ObjectSet">
-  <classpath refid="classpath.compile"/>
- </typedef>
-	
- <typedef name="object" classname="dak.ant.types.S3ObjectWrapper">
-  <classpath refid="classpath.compile"/>
- </typedef>
-	
+				
   <!-- NOTE: using an objectset with a refid requires the classes to be in the Ant path/home. 
              For seemingly obscure reasons (probably http://ant.apache.org/faq.html#delegating-classloader-1.6) 
              a typedef does not work.
    -->
 
- <s3fileset bucket="${examples.bucket}" id="configuration-files">
-  <object key="*.conf" />
- </s3fileset>
+ <S3fileset bucket="${examples.bucket}" id="configuration-files">
+  <S3file key="*.config" />
+ </S3fileset>
 	
  <!-- LIST -->
 		
+ <target name="list-fileset-all">
+  <S3list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <S3fileset bucket="${examples.bucket}" />
+  </S3list>
+ </target>
+		
  <target name="list-fileset-date">
-  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" outfile="${examples.dir}/list.txt" format="[%s][%s]" append="false">
-   <s3fileset bucket="${examples.bucket}">
+  <S3list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" outfile="${examples.dir}/list.txt" format="[%s][%s]" append="false">
+   <S3fileset bucket="${examples.bucket}">
     <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
-   </s3fileset>
-  </s3-list>
+   </S3fileset>
+  </S3list>
  </target>
 
  <target name="list-fileset-patternset">
-  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
-   <s3fileset bucket="${examples.bucket">
+  <S3list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <S3fileset bucket="${examples.bucket">
    	<patternset>
    	  <include name="**/*.jar"/>
    	</patternset>
-   </s3fileset>
-  </s3-list>
+   </S3fileset>
+  </S3list>
  </target> 	
 
  <target name="list-fileset-regex-1.7">
-  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
-   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
+  <S3list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <S3fileset bucket="${examples.bucket}" includes="**/*.jar" >
     <key regex="org"  caseSensitive="true" />
-   </s3fileset>
-  </s3-list>
+   </S3fileset>
+  </S3list>
  </target>
 	
  <target name="list-fileset-regex-1.8">
@@ -107,37 +105,35 @@
    </condition>
   </fail>
 
-  <s3-list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
-   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
+  <S3list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <S3fileset bucket="${examples.bucket}" includes="**/*.jar" >
     <filename regex="org" />
-   </s3fileset>
-  </s3-list>
+   </S3fileset>
+  </S3list>
  </target>
 	
  <!-- COPY -->
 	
- <target name="copy-fileset">
-  <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" verbose="true">
-   <s3fileset bucket="provantage-development" includes="**/*.jar" >
-    <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
-   </s3fileset>
-  </s3-copy>
+ <target name="copy-fileset-all">
+  <S3copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" verbose="true">
+   <S3fileset bucket="${examples.bucket}" />
+  </S3copy>
  </target>
 
  <target name="copy-fileset-date">
-  <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" dummyRun="true" verbose="true">
-   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
+  <S3copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" dummyRun="true" verbose="true">
+   <S3fileset bucket="${examples.bucket}" includes="**/*.jar" >
     <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
-   </s3fileset>
-  </s3-copy>
+   </S3fileset>
+  </S3copy>
  </target>
 
  <target name="copy-fileset-regex-1.7">
-  <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" dummyRun="true" verbose="true">
-   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
+  <S3copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" dummyRun="true" verbose="true">
+   <S3fileset bucket="${examples.bucket}" includes="**/*.jar" >
     <key regex="org" />
-   </s3fileset>
-  </s3-copy>
+   </S3fileset>
+  </S3copy>
  </target>
 
  <target name="copy-fileset-regex-1.8">
@@ -149,103 +145,103 @@
    </condition>
   </fail>
 
- <s3-copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" dummyRun="true" verbose="true">
-   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" >
+ <S3copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" dummyRun="true" verbose="true">
+   <S3fileset bucket="${examples.bucket}" includes="**/*.jar" >
     <filename regex="org" />
-   </s3fileset>
-  </s3-copy>
+   </S3fileset>
+  </S3copy>
  </target>
 	
  <!-- UPLOAD -->
 
  <target name="upload-new-or-changed">
-  <s3-upload verbose="true" 
-  	         accessId="${aws.accessId}" 
-  	         secretKey="${aws.secretKey}"
-  	         bucket="${examples.bucket}"
-  	         upload="new,changed">
+  <S3upload verbose="true" 
+  	        accessId="${aws.accessId}" 
+            secretKey="${aws.secretKey}"
+	        bucket="${examples.bucket}"
+  	        upload="new,changed">
    <fileset dir="${examples.dir}/upload" includes="**/*" excludes="**/.DSStore" />
-  </s3-upload>
+  </S3upload>
  </target>
 	
  <!-- DOWNLOAD -->
 
  <target name="download-all">
-  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/all" download="all" verbose="true" dummyRun="true">
-   <s3fileset bucket="${examples.bucket}" />
-  </s3-download>
+  <S3download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/all" download="all" verbose="true" dummyRun="true">
+   <S3fileset bucket="${examples.bucket}" />
+  </S3download>
  </target>
 		
  <target name="download-includes">
-  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/includes" download="new,changed" verbose="true">
-   <s3fileset bucket="${examples.bucket}" includes="**/*.jar" />
-  </s3-download>
+  <S3download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/includes" download="new,changed" verbose="true">
+   <S3fileset bucket="${examples.bucket}" includes="**/*.jar" />
+  </S3download>
  </target>
 
  <target name="download-excludes">
-  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/excludes" download="new,changed"  verbose="true">
-   <s3fileset bucket="${examples.bucket}" excludes="**/*.jar" />
-  </s3-download>
+  <S3download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/excludes" download="new,changed"  verbose="true">
+   <S3fileset bucket="${examples.bucket}" excludes="**/*.jar" />
+  </S3download>
  </target>
 
  <target name="download-list">
-  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/list" verbose="true">
-   <s3fileset bucket="${examples.bucket}">
-   	<s3file key="development.ecf" />
-   </s3fileset>
-  </s3-download>
+  <S3download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/list" verbose="true">
+   <S3fileset bucket="${examples.bucket}">
+   	<S3file key="development.ecf" />
+   </S3fileset>
+  </S3download>
  </target>
 	
  <target name="download-refid">
-  <s3-download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/refid" verbose="true">
-   <s3fileset refid="configuration-files" />
-  </s3-download>
+  <S3download accessId="${aws.accessId}" secretKey="${aws.secretKey}" dir="${examples.dir}/download/refid" verbose="true">
+   <S3fileset refid="configuration-files" />
+  </S3download>
  </target>
 	
  <!-- SYNCHRONIZE -->
 
  <target name="synchronize-upload">
-  <s3-synchronize accessId="${aws.accessId}" 
-  	              secretKey="${aws.secretKey}" 
-  	              bucket="${examples.bucket}"
-  	              direction="upload"
- 	              delete="false"
- 	              revert="false"
-                  includeDirectories="true"
-  	              dummyRun="false"
-  	              verbose="true" >
+  <S3synchronize accessId="${aws.accessId}" 
+  	             secretKey="${aws.secretKey}" 
+                 bucket="${examples.bucket}"
+                 direction="upload"
+                 delete="false"
+                 revert="false"
+                 includeDirectories="true"
+	             dummyRun="false"
+  	             verbose="true" >
    <fileset dir="${examples.dir}/synchronize/upload" includes="**/*" excludes="**/.DSStore" />
-  </s3-synchronize>
+  </S3synchronize>
  </target>
 
  <target name="synchronize-download">
-  <s3-synchronize accessId="${aws.accessId}" 
-  	              secretKey="${aws.secretKey}" 
-  	              bucket="${examples.bucket}"
-  	              direction="download"
- 	              delete="false"
- 	              revert="false"
-                  includeDirectories="true"
-  	              dummyRun="true"
-  	              verbose="true" >
+  <S3synchronize accessId="${aws.accessId}" 
+  	             secretKey="${aws.secretKey}" 
+  	             bucket="${examples.bucket}"
+  	             direction="download"
+ 	             delete="false"
+ 	             revert="false"
+                 includeDirectories="true"
+  	             dummyRun="true"
+  	             verbose="true" >
    <fileset dir="${examples.dir}/synchronize/download" includes="**/*" excludes="**/.DSStore" />
-  </s3-synchronize>
+  </S3synchronize>
  </target>
 
  <!-- DELETE -->
 
  <target name="delete-fileset">
-  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
-   <s3fileset bucket="${examples.bucket}" includes="**/*.bak" />
-  </s3-delete>
+  <S3delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <S3fileset bucket="${examples.bucket}" includes="**/*.bak" />
+  </S3delete>
  </target>
 		
  <target name="delete-regex">
-  <s3-delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" dummyRun="true" verbose="true">
-   <s3fileset bucket="provantage-development" includes="**/*.jar">
+  <S3delete accessId="${aws.accessId}" secretKey="${aws.secretKey}" dummyRun="true" verbose="true">
+   <S3fileset bucket="provantage-development" includes="**/*.jar">
     <key regex="org" casesensitive="true" />
-   </s3fileset> 	
-  </s3-delete>
+   </S3fileset> 	
+  </S3delete>
  </target>
 
 	
