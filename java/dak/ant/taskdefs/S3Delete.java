@@ -109,7 +109,7 @@ public class S3Delete extends AWSTask
                                 { service.deleteObject(object.getBucketName(), object.getKey());
 
                                   if (verbose)
-                                     log("Deleted '[" + object.getBucketName() + "][" + object.getKey() + "'");
+                                     log("Deleted '[" + object.getBucketName() + "][" + object.getKey() + "']");
                                 }
                            }
                      } 
