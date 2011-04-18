@@ -99,7 +99,7 @@ public class S3Upload extends AWSTask
            *               that have changed compared to the existing existing copy in the bucket
            * </ul>
            * 
-           * @param options Comma separated list of upload options. Defaults to 'all'.
+           * @param upload Comma separated list of upload options. Defaults to 'all'.
            */
          public void setUpload(String upload) 
                 { if (upload == null)

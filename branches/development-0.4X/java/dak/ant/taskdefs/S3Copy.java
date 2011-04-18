@@ -56,6 +56,19 @@ public class S3Copy extends AWSTask
 
                   return fileset;
                 }
+
+         /** Utility implementation of 'create' method for nested S3 filesets, for use with antlib
+           * task definitions.
+           * 
+           * @return Initialised S3Fileset that has been added to the internal list of filesets.
+           */
+         public S3FileSet createFileSet() 
+                { S3FileSet fileset = new S3FileSet();
+
+                  filesets.add(fileset);
+
+                  return fileset;
+                }
          
          /** Task attribute to execute the copy as a 'dummy run' to verify that it will do 
            * what is intended. 

@@ -70,6 +70,12 @@
   </S3list>
  </target>
 		
+ <target name="list-fileset-includes">
+  <S3list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <S3fileset bucket="${examples.bucket}" includes="**/*.bak" />
+  </S3list>
+ </target>
+		
  <target name="list-fileset-date">
   <S3list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" outfile="${examples.dir}/list.txt" format="[%s][%s]" append="false">
    <S3fileset bucket="${examples.bucket}">
@@ -207,7 +213,6 @@
                  direction="upload"
                  delete="false"
                  revert="false"
-                 includeDirectories="true"
 	             dummyRun="false"
   	             verbose="true" >
    <fileset dir="${examples.dir}/synchronize/upload" includes="**/*" excludes="**/.DSStore" />
@@ -221,8 +226,7 @@
   	             direction="download"
  	             delete="false"
  	             revert="false"
-                 includeDirectories="true"
-  	             dummyRun="true"
+  	             dummyRun="false"
   	             verbose="true" >
    <fileset dir="${examples.dir}/synchronize/download" includes="**/*" excludes="**/.DSStore" />
   </S3synchronize>

@@ -109,7 +109,7 @@ public class S3FileSet extends DataType
          
          /** Sets the prefix to use inside an S3 bucket.
            * 
-           * @param bucket S3 bucket name.
+           * @param prefix  Prefix for folder in S3 bucket. Default value is "" (none).
            */
          public void setPrefix(String prefix) 
                 { if (isReference())
@@ -223,6 +223,23 @@ public class S3FileSet extends DataType
                   return file;
                 }
     
+         /** Utility attribute for antlib definitions. create&lt;Type&gt; implementation for an included <code>s3:File</code>.
+           * 
+           */
+         public S3File createFile() 
+                { if (isReference())
+                     throw noChildrenAllowed();
+
+                  S3File file = new S3File();
+ 
+                  file.setBucket(this.bucket);
+                  files.add     (file);
+                  
+                  this.included = null;
+
+                  return file;
+                }
+   
          // TESTED SELECTORS
 
          /** Adds a nested &lt;filename&gt; selector.

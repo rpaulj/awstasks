@@ -64,7 +64,7 @@ public class S3Synchronize extends AWSTask
          private AccessControlList    acl;
 
          private DIRECTION direction;
-         private boolean   includeDirectories = true;
+         private boolean   includeDirectories = false;
          private boolean   dummyRun = false;
          private boolean   delete   = false;
          private boolean   revert   = false;
@@ -98,7 +98,7 @@ public class S3Synchronize extends AWSTask
          /** Deletes files in the destination that do not have an equivalent source object if <code>true</code>. 
            * Default value is <code>false</code>.
            * 
-           * @param direction "upload" or "download".
+           * @param enabled If <code>false</code>, does not delete files that would otherwise be deleted.
            */
          public void setDelete(boolean enabled) 
                 { this.delete = enabled;
@@ -107,19 +107,19 @@ public class S3Synchronize extends AWSTask
          /** Overwrites files in the destination that are newer than the equivalent source object if <code>true</code>. 
            * Default value is <code>false</code>.
            * 
-           * @param direction "upload" or "download".
+           * @param enabled If <code>false</code>, does not overwrite files that would otherwise be overwritten.
            */
          public void setRevert(boolean enabled) 
                 { this.revert = enabled;
                 }
 
-         /** Sets the include pattern for the local directory.
-           * 
-           * @param enabled
-           */
-         public void setIncludeDirectories(boolean enabled) 
-                { this.includeDirectories = enabled;
-                }
+//         /** Sets the include pattern for the local directory.
+//           * 
+//           * @param enabled
+//           */
+//         public void setIncludeDirectories(boolean enabled) 
+//                { this.includeDirectories = enabled;
+//                }
 
          /** Create method for nested Ant filesets that specify the local directory for synchronisation.
            *  
@@ -348,12 +348,12 @@ public class S3Synchronize extends AWSTask
                    FileComparerResults       rs      = fc.buildDiscrepancyLists(files, objects);
 
                    // ... synchronize
-
+                   
                    for (String key: rs.onlyOnServerKeys) 
                        { if (dummyRun)
                             log(DUMMY_RUN + " Added: [" + key + "]");
                             else
-                            download(service,bucket, key, new File(root, key), "Added:");
+                            download(service,bucket,key,new File(root, key), "Added:");
                        }
 
                    for (String key: rs.updatedOnServerKeys)
