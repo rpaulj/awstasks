@@ -84,19 +84,6 @@ public class S3Download extends AWSTask
                       }
                 }
 
-//         /** Create method for nested S3 filesets. Identical to createS3Fileset but allows the use of
-//           * &ltfileset&gt; when using as an antlib.
-//           * 
-//           * @return Initialised S3Fileset that has been added to the internal list of filesets.
-//           */
-//         public S3FileSet createFileSet() 
-//                { S3FileSet fileset = new S3FileSet();
-//
-//                  filesets.add(fileset);
-//
-//                  return fileset;
-//                }
-
          /** Create method for nested S3 filesets.
            * 
            * @return Initialised S3Fileset that has been added to the internal list of filesets.
@@ -109,6 +96,19 @@ public class S3Download extends AWSTask
                   return fileset;
                 }
          
+         /** Utility implementation of 'create' method for nested S3 filesets, for use with antlib
+           * task definitions.
+           * 
+           * @return Initialised S3Fileset that has been added to the internal list of filesets.
+           */
+         public S3FileSet createFileSet() 
+                { S3FileSet fileset = new S3FileSet();
+ 
+                  filesets.add(fileset);
+ 
+                  return fileset;
+                }
+        
          /** Task attribute to execute the copy as a 'dummy run' to verify that it will do 
            * what is intended. 
            * 

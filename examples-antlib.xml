@@ -7,10 +7,10 @@
 	
  <!-- PROPERTIES -->
 
- <property name="examples.credentials" value="aws.properties"     />
- <property name="examples.bucket"      value="awstasks-test"      />
- <property name="examples.bucket.copy" value="awstasks-test-copy" />
- <property name="examples.dir"         value="${basedir}/runtime" />
+ <property name="examples.credentials" value="../../dist/awstasks.properties" />
+ <property name="examples.bucket"      value="awstasks-test"             />
+ <property name="examples.bucket.copy" value="awstasks-test-copy"        />
+ <property name="examples.dir"         value="${basedir}/runtime"        />
 
  <property file="${examples.credentials}" />
 
@@ -20,13 +20,35 @@
 	
  <!-- LIST -->
 			
+ <target name="list-fileset-all">
+  <s3:list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3:fileset bucket="${examples.bucket}" />
+  </s3:list>
+ </target>
+
+ <target name="list-fileset-includes">
+  <s3:list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3:fileset bucket="${examples.bucket}" includes="**/*.bak" />
+  </s3:list>
+ </target>
+	
  <target name="list-fileset-date">
   <s3:list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true" outfile="${examples.dir}/list.txt" format="[%s][%s]" append="false">
-   <s3:fileset bucket="${examples.bucket}" includes="**/*.jar" >
+   <s3:fileset bucket="${examples.bucket}">
     <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
    </s3:fileset>
   </s3:list>
  </target>
+
+ <target name="list-fileset-patternset">
+  <s3:list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
+   <s3:fileset bucket="${examples.bucket">
+    <patternset>
+     <include name="**/*.jar"/>
+    </patternset>
+   </s3:fileset>
+  </s3:list>
+ </target> 	
 
  <target name="list-fileset-regex-1.7">
   <s3:list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
@@ -54,11 +76,9 @@
 		
  <!-- COPY -->
 		
- <target name="copy-fileset">
+ <target name="copy-fileset-all">
   <s3:copy accessId="${aws.accessId}" secretKey="${aws.secretKey}" bucket="${examples.bucket.copy}" verbose="true">
-   <s3:fileset bucket="provantage-development" includes="**/*.jar" >
-    <date when="before" datetime="2011-03-01" pattern="yyyy-MM-dd" />
-   </s3:fileset>
+   <s3:fileset bucket="${examples.bucket}" />
   </s3:copy>
  </target>
 
@@ -114,7 +134,7 @@
                secretKey="${aws.secretKey}"
                dir="${examples.dir}/download/all"
                download="new,changed">
-  	<s3:objectset bucket="${examples.bucket}" />
+  	<s3:fileset bucket="${examples.bucket}" />
   </s3:download>
  </target>
 		
@@ -124,7 +144,7 @@
                secretKey="${aws.secretKey}"
                dir="${examples.dir}/download/includes"
                download="new,changed">
-   <s3:objectset bucket="${examples.bucket}" includes="**/*.jar" />
+   <s3:fileset bucket="${examples.bucket}" includes="**/*.jar" />
   </s3:download>
  </target>
 
@@ -134,7 +154,7 @@
 	           secretKey="${aws.secretKey}"
 	           dir="${examples.dir}/download/excludes"
                download="new,changed">
-   <s3:objectset bucket="${examples.bucket}" excludes="**/*.jar" />
+   <s3:fileset bucket="${examples.bucket}" excludes="**/*.jar" />
   </s3:download>
  </target>
 
@@ -143,9 +163,9 @@
 	  	       accessId="${aws.accessId}"
 		       secretKey="${aws.secretKey}"
                dir="${examples.dir}/download/list">
-   <s3:objectset bucket="${examples.bucket}">
-   	<s3:object key="development.ecf" />
-   </s3:objectset>
+   <s3:fileset bucket="${examples.bucket}">
+   	<s3:file key="development.ecf" />
+   </s3:fileset>
   </s3:download>
  </target>
 	
@@ -154,7 +174,7 @@
 	  	       accessId="${aws.accessId}"
   	           secretKey="${aws.secretKey}"
 	           dir="${examples.dir}/download/refid">
-   <s3:objectset refid="configuration-files" />
+   <s3:fileset refid="configuration-files" />
   </s3:download>
  </target>
 	
@@ -167,10 +187,9 @@
   	              direction="upload"
  	              delete="false"
  	              revert="false"
-                  includeDirectories="true"
   	              dummyRun="false"
   	              verbose="true" >
-   <fileset dir="${examples.dir}/synchronize" includes="**/*" excludes="**/.DSStore" />
+   <s3:fileset dir="${examples.dir}/synchronize/upload" includes="**/*" excludes="**/.DSStore" />
   </s3:synchronize>
  </target>
 
@@ -181,10 +200,9 @@
   	              direction="download"
  	              delete="false"
  	              revert="false"
-                  includeDirectories="true"
   	              dummyRun="false"
   	              verbose="true" >
-   <fileset dir="${examples.dir}/synchronize" includes="**/*" excludes="**/.DSStore" />
+   <s3:fileset dir="${examples.dir}/synchronize/download" includes="**/*" excludes="**/.DSStore" />
   </s3:synchronize>
  </target>
 	
