@@ -59,12 +59,11 @@ public class S3Synchronize extends AWSTask
          private boolean              publicRead        = false;
          private List<FileSet>        filesets          = new ArrayList<FileSet>();
          private boolean              cacheNeverExpires = false;
-         private MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+         private MimetypesFileTypeMap mimeTypesMap      = new MimetypesFileTypeMap();
          private String               mimeTypesFile;
          private AccessControlList    acl;
 
          private DIRECTION direction;
-         private boolean   includeDirectories = false;
          private boolean   dummyRun = false;
          private boolean   delete   = false;
          private boolean   revert   = false;
@@ -216,11 +215,9 @@ public class S3Synchronize extends AWSTask
                                   String[]         files   = ds.getIncludedFiles();
                                   List<File>       list    = new ArrayList<File>();
 
-                                  if (includeDirectories) 
-                                     { for (String dir: subdirs) 
-                                           { list.add(new File(root, dir));
-                                           }
-                                     }
+                                  for (String dir: subdirs) 
+                                      { list.add(new File(root, dir));
+                                      }
 
                                   for (String file: files) 
                                       { list.add(new File(root, file));
@@ -228,11 +225,11 @@ public class S3Synchronize extends AWSTask
 
                                   switch (direction) 
                                          { case UPLOAD:
-                                                upload(s3, bucket, root, list.toArray(new File[0]));
+                                                upload(s3,bucket,root,list.toArray(new File[0]));
                                                 break;
 
                                            case DOWNLOAD:
-                                                download(s3, bucket, root, list.toArray(new File[0]));
+                                                download(s3,bucket,root,list.toArray(new File[0]));
                                                 break;
                                          }
                                 }
@@ -280,10 +277,13 @@ public class S3Synchronize extends AWSTask
 
                    // ... synchronize
 
-                   for (String key : rs.onlyOnClientKeys) 
+                   for (String key: rs.onlyOnClientKeys) 
                        { File   file        = files.get(key);
                          String contentType = mimeTypesMap.getContentType(file);
 
+                         if (file.isDirectory())
+                            continue;
+                         
                          if (dummyRun)
                             log(DUMMY_RUN + " Added: [" + key + "]");
                             else 
@@ -294,9 +294,12 @@ public class S3Synchronize extends AWSTask
                             }
                        }
 
-                   for (String key : rs.updatedOnClientKeys) 
+                   for (String key: rs.updatedOnClientKeys) 
                        { File   file        = files.get(key);
                          String contentType = mimeTypesMap.getContentType(file);
+
+                         if (file.isDirectory())
+                             continue;
 
                          if (dummyRun)
                            log(DUMMY_RUN + " Updated: [" + key + "]");
@@ -309,23 +312,27 @@ public class S3Synchronize extends AWSTask
                        }
 
                    for (String key: rs.onlyOnServerKeys) 
-                       { if (dummyRun)
-                            log(DUMMY_RUN + " Deleted: [" + key + "]");
-                            else if (delete) 
-                            delete(service, bucket, key, "Deleted: ");
+                       { if (delete)
+                            { if (dummyRun)
+                                 log(DUMMY_RUN + " Deleted: [" + key + "]");
+                                 else 
+                                 delete(service, bucket, key, "Deleted: ");
+                            }
                        }
 
                    for (String key: rs.updatedOnServerKeys) 
                        { File   file        = files.get(key);
                          String contentType = mimeTypesMap.getContentType(file);
 
-                         if (dummyRun)
-                           log(DUMMY_RUN + " Reverted: [" + key + "]");
-                           else if (revert)
-                           { if (verbose)
-                               log("Reverted: " + "[" + key + "][" + file + "]");
+                         if (revert)
+                            { if (dummyRun)
+                                 log(DUMMY_RUN + " Reverted: [" + key + "]");
+                                 else 
+                                 { if (verbose)
+                                     log("Reverted: " + "[" + key + "][" + file + "]");
 
-                             upload(service,bucket,acl,cacheNeverExpires,key,file,contentType);
+                                   upload(service,bucket,acl,cacheNeverExpires,key,file,contentType);
+                                 }
                            }
                        }
                  }
@@ -353,7 +360,7 @@ public class S3Synchronize extends AWSTask
                        { if (dummyRun)
                             log(DUMMY_RUN + " Added: [" + key + "]");
                             else
-                            download(service,bucket,key,new File(root, key), "Added:");
+                            download(service,bucket,key,new File(root,key), "Added:");
                        }
 
                    for (String key: rs.updatedOnServerKeys)
@@ -364,17 +371,21 @@ public class S3Synchronize extends AWSTask
                        }
 
                    for (String key: rs.onlyOnClientKeys)
-                       { if (dummyRun)
-                            log(DUMMY_RUN + " Deleted: [" + key + "]");
-                            else if (delete)
-                            delete(files.get(key),"Deleted: ");
+                       { if (delete)
+                            { if (dummyRun)
+                                 log(DUMMY_RUN + " Deleted: [" + key + "]");
+                                 else
+                                 delete(files.get(key),"Deleted: ");
+                            }
                        }
 
                    for (String key: rs.updatedOnClientKeys) 
-                       { if (dummyRun)
-                            log(DUMMY_RUN + " Reverted: [" + key + "]");
-                            else if (revert)
-                            download(service, bucket, key, files.get(key), "Reverted: ");
+                       { if (revert)
+                            { if (dummyRun)
+                                 log(DUMMY_RUN + " Reverted: [" + key + "]");
+                                 else
+                                 download(service, bucket, key, files.get(key), "Reverted: ");
+                            }
                        }
                  }
 
