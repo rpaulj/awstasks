@@ -103,16 +103,36 @@
   <classpath refid="classpath.compile"/>
  </typedef>
 
- <property file="../../dist/awstasks.properties" />
-	
- <target name="list-fileset">
-  <S3list accessId="${aws.accessId}" secretKey="${aws.secretKey}" verbose="true">
-   <S3fileset bucket="awstasks-test" >
-   	<custom classpath="${awstasks.classes}" classname="dak.ant.selectors.S3KeySelector">
-     <param name="regex" value="osgi"/>
-   	</custom>
-   </S3fileset>
-  </S3list>
- </target>
+ <property name="examples.credentials" value="../../dist/awstasks.properties" />
+ <property name="examples.bucket"      value="awstasks-test"             />
+ <property name="examples.bucket.copy" value="awstasks-test-copy"        />
+ <property name="examples.dir"         value="${basedir}/runtime"        />
 
+ <property file="${examples.credentials}" />
+	
+ <target name="synchronize-upload" depends="compile">
+  <S3synchronize accessId="${aws.accessId}" 
+	             secretKey="${aws.secretKey}" 
+	             bucket="${examples.bucket}"
+                 direction="upload"
+                 delete="false"
+                 revert="false"
+	             dummyRun="false"
+  	             verbose="true" >
+    <fileset dir="${examples.dir}/synchronize/upload" includes="**/*" excludes="**/.DSStore" />
+  </S3synchronize>
+ </target>
+	
+ <target name="synchronize-download" depends="compile">
+  <S3synchronize accessId="${aws.accessId}" 
+  	             secretKey="${aws.secretKey}" 
+  	             bucket="${examples.bucket}"
+  	             direction="download"
+ 	             delete="false"
+ 	             revert="false"
+  	             dummyRun="false"
+  	             verbose="true" >
+   <fileset dir="${examples.dir}/synchronize/download" includes="**/*" excludes="**/.DSStore" />
+  </S3synchronize>
+ </target>
 </project>

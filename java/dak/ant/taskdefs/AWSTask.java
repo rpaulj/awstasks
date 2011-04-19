@@ -146,7 +146,7 @@ public abstract class AWSTask extends MatchingTask
            * @param files List of files to synchronize.
            * @throws IOException Thrown if the file system fails on File.getCanonicalPath.
            */
-         protected Map<String, File> buildFileMap(File root,File[] files,String prefix) throws IOException 
+         protected Map<String,File> buildFileMap(File root,File[] files,String prefix) throws IOException 
                    { Map<String,File> fileMap = new HashMap<String, File>();
                      String          _root    = normalize(root.getCanonicalPath());
  
@@ -183,7 +183,7 @@ public abstract class AWSTask extends MatchingTask
            * 
            * @throws IOException Thrown if the file system fails on File.getCanonicalPath.
            */
-         protected Map<String, File> buildFileMap(File root,String[] files,String prefix) throws IOException   
+         protected Map<String,File> buildFileMap(File root,String[] files,String prefix) throws IOException   
                    { File[] list = new File[files.length];
                      int    ix   = 0;
 
