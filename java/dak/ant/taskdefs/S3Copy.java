@@ -29,130 +29,125 @@ import dak.ant.types.S3FileSet;
 //     
 // TS: Added automatic bucket creation.
 
-public class S3Copy extends AWSTask 
-       { // INSTANCE VARIABLES
+public class S3Copy extends AWSTask {
+       // INSTANCE VARIABLES
     
-         private String          bucket;
-         private List<S3FileSet> filesets = new ArrayList<S3FileSet>();
-         private boolean         dummyRun = false;
+       private String          bucket;
+       private List<S3FileSet> filesets = new ArrayList<S3FileSet>();
+       private boolean         dummyRun = false;
 
-         // PROPERTIES
+       // PROPERTIES
 
-         /** Sets the destination S3 bucket.
-           * 
-           */
-         public void setBucket(String bucket)  
-                { this.bucket = bucket;
-                }
-
-         /** Create method for nested S3 filesets.
-           * 
-           * @return Initialised S3Fileset that has been added to the internal list of filesets.
-           */
-         public S3FileSet createS3FileSet() 
-                { S3FileSet fileset = new S3FileSet();
-
-                  filesets.add(fileset);
-
-                  return fileset;
-                }
-
-         /** Utility implementation of 'create' method for nested S3 filesets, for use with antlib
-           * task definitions.
-           * 
-           * @return Initialised S3Fileset that has been added to the internal list of filesets.
-           */
-         public S3FileSet createFileSet() 
-                { S3FileSet fileset = new S3FileSet();
-
-                  filesets.add(fileset);
-
-                  return fileset;
-                }
-         
-         /** Task attribute to execute the copy as a 'dummy run' to verify that it will do 
-           * what is intended. 
-           * 
-           */
-         public void setDummyRun(boolean enabled)
-                { this.dummyRun = enabled;
-                }
-
-         // IMPLEMENTATION
-
-         /** Checks that the AWS credentials and the destination bucket have been initialised.
-           * 
-           */
-         @Override
-         protected void checkParameters() throws BuildException 
-                   { super.checkParameters();
-                 
-                     if (bucket == null)
-                        { throw new BuildException("'bucket' task attribute must be set");
-                        }
-                   }
-
-         /** Copies the S3 objects in the filesets across to the task 'bucket' attribute. 
-           * <p>
-           * The destination bucket is created if it does not already exist.
-           */
-         @Override
-         public void execute() throws BuildException 
-                { checkParameters();
-             
-                  try
-                     { AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
-                       S3Service      service     = new RestS3Service(credentials);
-                       Set<S3File>    list        = new ConcurrentSkipListSet<S3File>();
-
-                       // ... match on filesets
-
-                       for (S3FileSet fileset: filesets)
-                           { Iterator<S3File> ix = fileset.iterator(service); 
-                         
-                             while (ix.hasNext()) 
-                                   { list.add(ix.next());
-                                   }  
-                           }
-
-                       if (list.isEmpty())
-                          { log("Copy list is empty - nothing to do.");
-                            return;
-                          }
-                       
-                       // ... create bucket
-                       
-                      if (service.getBucket(bucket) == null) 
-                         { log("Bucket '" + bucket + "' does not exist ! Creating ...",LogLevel.WARN.getLevel());
-                           service.createBucket(new S3Bucket(bucket));
-                         }
-
-                       // ... copy objects in list
-
-                       log("Copying " + list.size() + " objects");
-
-                       for (S3File file: list) 
-                           { S3Object object = new S3Object(file.getKey());
-
-                             if (dummyRun)
-                                { log(DUMMY_RUN + " Copied '" + file.getBucket() + "::" + file.getKey() + "' to '" + bucket + "::" + object.getKey() + "'");
-                                }
-                                else
-                                { service.copyObject(file.getBucket(),file.getKey(),bucket,object,true);
-                                    
-                                  if (verbose)
-                                    log("Copied '" + file.getBucket() + "::" + file.getKey() + "' to '" + bucket + "::" + object.getKey() + "'");
-                                }
-                           }
-                     }
-                  catch(BuildException x)
-                     { throw x;
-                     }
-                  catch(ServiceException x)
-                     { throw new BuildException(x.getErrorMessage());
-                     }
-                  catch (Exception x) 
-                     { throw new BuildException(x);
-                     }
-                }
+       /** Sets the destination S3 bucket.
+         * 
+         */
+       public void setBucket(String bucket) {
+              this.bucket = bucket;
        }
+
+       /** Create method for nested S3 filesets.
+         * 
+         * @return Initialised S3Fileset that has been added to the internal list of filesets.
+         */
+       public S3FileSet createS3FileSet() {
+              S3FileSet fileset = new S3FileSet();
+
+              filesets.add(fileset);
+
+              return fileset;
+       }
+
+       /** Utility implementation of 'create' method for nested S3 filesets, for use with antlib
+         * task definitions.
+         * 
+         * @return Initialised S3Fileset that has been added to the internal list of filesets.
+         */
+       public S3FileSet createFileSet() { 
+              S3FileSet fileset = new S3FileSet();
+
+              filesets.add(fileset);
+
+              return fileset;
+       }
+         
+       /** Task attribute to execute the copy as a 'dummy run' to verify that it will do 
+         * what is intended. 
+         * 
+         */
+       public void setDummyRun(boolean enabled) { 
+              this.dummyRun = enabled;
+       }
+
+       // IMPLEMENTATION
+
+       /** Checks that the AWS credentials and the destination bucket have been initialised.
+         * 
+         */
+       @Override
+       protected void checkParameters() throws BuildException {
+                 super.checkParameters();
+
+                 if (bucket == null) {
+                    throw new BuildException("'bucket' task attribute must be set");
+                 }
+       }
+
+       /** Copies the S3 objects in the filesets across to the task 'bucket' attribute. 
+        * <p>
+        * The destination bucket is created if it does not already exist.
+        */
+       @Override
+       public void execute() throws BuildException {
+              checkParameters();
+
+              try { AWSCredentials credentials = new AWSCredentials(accessId, secretKey);
+                    S3Service      service     = new RestS3Service(credentials);
+                    Set<S3File>    list        = new ConcurrentSkipListSet<S3File>();
+
+                    // ... match on filesets
+
+                    for (S3FileSet fileset: filesets) {
+                        Iterator<S3File> ix = fileset.iterator(service); 
+
+                        while (ix.hasNext()) {
+                              list.add(ix.next());
+                        }  
+                    }
+
+                    if (list.isEmpty()) {
+                       log("Copy list is empty - nothing to do.");
+                       return;
+                    }
+
+                    // ... create bucket
+
+                    if (service.getBucket(bucket) == null) {
+                       log("Bucket '" + bucket + "' does not exist ! Creating ...",LogLevel.WARN.getLevel());
+                       service.createBucket(new S3Bucket(bucket));
+                    }
+
+                    // ... copy objects in list
+
+                    log("Copying " + list.size() + " objects");
+
+                    for (S3File file: list) {
+                        S3Object object = new S3Object(file.getKey());
+
+                        if (dummyRun) {
+                           log(DUMMY_RUN + " Copied '" + file.getBucket() + "::" + file.getKey() + "' to '" + bucket + "::" + object.getKey() + "'");
+                        } else { 
+                           service.copyObject(file.getBucket(),file.getKey(),bucket,object,true);
+
+                           if (verbose)
+                               log("Copied '" + file.getBucket() + "::" + file.getKey() + "' to '" + bucket + "::" + object.getKey() + "'");
+                        }
+                    }
+              } catch(BuildException x) {
+                  throw x;
+              } catch(ServiceException x) {
+                  throw new BuildException(x.getErrorMessage());
+              } catch (Exception x) {
+                  throw new BuildException(x);
+              }
+       }
+}
