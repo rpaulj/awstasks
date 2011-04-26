@@ -73,19 +73,6 @@ public class S3List extends AWSTask {
               return fileset;
        }
 
-       /** Utility implementation of 'create' method for nested S3 filesets, for use with antlib
-         * task definitions.
-         * 
-         * @return Initialised S3Fileset that has been added to the internal list of filesets.
-         */
-       public S3FileSet createFileSet() { 
-              S3FileSet fileset = new S3FileSet();
-
-              filesets.add(fileset);
-
-              return fileset;
-       }
-
        // IMPLEMENTATION
 
        /** Retrieves the bucket and object keys for all S3 objects that match the nested filesets and prints
